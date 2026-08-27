@@ -174,6 +174,10 @@ body.plain .beat{display:none}
 .persona:hover{border-color:var(--accent-line)}
 .persona.on{border-color:var(--accent);background:linear-gradient(0deg,var(--accent-soft),var(--accent-soft)),var(--panel)}
 .persona.on h4{color:var(--accent)}
+.chip{display:inline-flex;align-items:center;font-size:12px;padding:4px 12px;border:1px solid var(--line-strong);border-radius:999px;cursor:pointer;color:var(--muted);transition:.15s;user-select:none}
+.chip input{display:none}
+.chip:hover{border-color:var(--accent-line)}
+.chip.on{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
 
 .qcard{
   margin-top:18px;border:1px solid var(--line-strong);border-radius:var(--radius);
@@ -245,6 +249,28 @@ body.plain .beat{display:none}
 
 #shareCanvasWrap{display:none;margin-top:26px;text-align:center}
 #shareCanvasWrap img{max-width:340px;border:1px solid var(--line-strong);border-radius:var(--radius)}
+/* AI 深度评审（朱批面板） */
+.ai-deep{margin-top:24px;border:1px solid var(--accent-line);border-radius:var(--radius);background:var(--accent-soft);padding:20px 22px;text-align:left}
+.ai-deep h4{font-family:var(--serif);color:var(--accent);font-size:16px;margin-bottom:8px}
+.ai-deep ul{list-style:none;display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.ai-deep li{font-size:14px;line-height:1.7;color:var(--text);padding-left:24px;position:relative}
+.ai-deep li::before{content:'批';position:absolute;left:0;top:3px;font-size:11px;color:#fff;background:var(--accent);border-radius:3px;padding:1px 5px;line-height:1.4}
+.ai-deep li.weak::before{content:'弱';background:#8a6d3b}
+.ai-deep li.adv::before{content:'方';background:#4a6b4f}
+.ai-deep .ad-note{margin-top:14px;font-family:var(--serif);color:var(--muted);font-size:14px}
+/* 生存率历史对比徽章 */
+.hist-badge{display:inline-block;margin-left:10px;font-size:12px;padding:2px 10px;border-radius:999px;border:1px solid var(--line-strong);color:var(--muted)}
+.hist-badge.up{color:var(--ok);border-color:var(--ok)}
+.hist-badge.down{color:var(--accent);border-color:var(--accent)}
+/* 对话截图 */
+.shot-wrap{margin-top:18px;text-align:center}
+.shot-wrap img{max-width:360px;width:100%;border:1px solid var(--line-strong);border-radius:var(--radius)}
+/* 首次引导弹窗 */
+.guide-mask{position:fixed;inset:0;background:rgba(33,28,21,.45);z-index:98;display:flex;align-items:center;justify-content:center;padding:20px}
+.guide-card{background:var(--panel);border:1px solid var(--line-strong);border-radius:var(--radius);max-width:520px;width:100%;padding:30px 32px}
+.guide-card h3{font-family:var(--serif);font-size:22px;margin-bottom:16px}
+.guide-card ol{margin:0 0 20px 20px;display:flex;flex-direction:column;gap:10px;font-size:14px;line-height:1.8;color:var(--text)}
+.guide-card .hint{margin-top:12px}
 
 /* ============ 页脚 ============ */
 footer{border-top:1px solid var(--line);padding:36px 0 48px;color:var(--faint);font-size:13px}
@@ -442,7 +468,38 @@ textarea:focus,input:focus{box-shadow:0 0 0 3px rgba(184,51,42,.1)}
       <details>
         <summary style="cursor:pointer;font-weight:600;color:var(--accent)">＋ 没有 match 到？自己捏一位「我的导师」 / 导入别人的遭遇码</summary>
         <div style="margin-top:12px;display:flex;flex-direction:column;gap:10px">
-          <textarea id="taCust" rows="3" placeholder="用几句话画个像：开会迟到十分钟但记性极好；口头禅是“你这个意义上讲”；最恨 PPT 错别字；讲到实验设计会突然兴奋……越具体越像。"></textarea>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <span style="font-size:13px;color:var(--muted)">懒人示例：</span>
+            <button class="btn btn-ghost demo-cust" data-eg="0" style="font-size:12px;padding:2px 10px">阴阳数据控</button>
+            <button class="btn btn-ghost demo-cust" data-eg="1" style="font-size:12px;padding:2px 10px">温柔刀·先夸后杀</button>
+            <button class="btn btn-ghost demo-cust" data-eg="2" style="font-size:12px;padding:2px 10px">絮叨进度劳模</button>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <label style="flex:1;min-width:200px;font-size:13px;color:var(--muted)">脾气气质
+              <select id="selMood" style="width:100%;margin-top:4px">
+                <option value="">（凭描述自己体会）</option>
+                <option>儒雅随和</option>
+                <option>阴阳怪气</option>
+                <option>暴躁直击</option>
+                <option>冷面话少</option>
+                <option>絮叨反复</option>
+                <option>温柔刀·先夸后杀</option>
+              </select>
+            </label>
+            <label style="flex:1;min-width:200px;font-size:13px;color:var(--muted)">严苛程度：<b id="heatLabel" style="color:var(--accent)">标准严格</b>
+              <input id="ipHeat" type="range" min="1" max="5" value="3" style="width:100%;margin-top:8px">
+            </label>
+          </div>
+          <div id="focusChips" style="display:flex;gap:8px;flex-wrap:wrap">
+            <span style="font-size:13px;color:var(--muted);align-self:center">常盯死穴：</span>
+            <label class="chip"><input type="checkbox" value="数据细节">数据细节</label>
+            <label class="chip"><input type="checkbox" value="实验方法">实验方法</label>
+            <label class="chip"><input type="checkbox" value="理论创新">理论创新</label>
+            <label class="chip"><input type="checkbox" value="写作规范">写作规范</label>
+            <label class="chip"><input type="checkbox" value="进度管理">进度管理</label>
+            <label class="chip"><input type="checkbox" value="文献功底">文献功底</label>
+          </div>
+          <textarea id="taCust" rows="3" placeholder="补充具体事迹（选填但强烈建议）：开会迟到十分钟但记性极好，三周前你随口说的话他都翻旧账；最恨 PPT 错别字；一问到实验设计就突然兴奋……写具体事件，别只写“很严格”这种空话。"></textarea>
           <div style="display:flex;gap:10px;flex-wrap:wrap">
             <input id="ipTick" placeholder="标志性口头禅（可选）" style="flex:1;min-width:160px">
             <select id="selAlias">
@@ -453,6 +510,7 @@ textarea:focus,input:focus{box-shadow:0 0 0 3px rgba(184,51,42,.1)}
               <option value="devil">抬杠反例式</option>
             </select>
           </div>
+          <p class="hint" id="custPreview" style="color:var(--accent)"></p>
           <button class="btn btn-primary" id="btnSaveCust" style="align-self:flex-start">保存并选用 ta</button>
           <p class="hint">⚠ 请勿填写导师真实姓名、院校等可识别信息——只描述风格即可，避免名誉权纠纷。</p>
           <div style="display:flex;gap:10px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:12px">
@@ -490,7 +548,7 @@ textarea:focus,input:focus{box-shadow:0 0 0 3px rgba(184,51,42,.1)}
     <div class="row-actions">
       <button class="btn btn-primary" id="btnC">评估生存率</button>
       <button class="btn btn-ghost demo-c">塞入示例材料</button>
-      <span class="hint">评分基于 8 类常见致命项启发式检测</span>
+      <span class="hint">评分基于 8 类常见致命项启发式检测 + AI 深度评审</span>
     </div>
     <p class="field-error" id="errC">请先粘贴汇报材料。</p>
 
@@ -510,9 +568,22 @@ textarea:focus,input:focus{box-shadow:0 0 0 3px rgba(184,51,42,.1)}
 <footer>
   <div class="wrap">
     <span>组会求生舱</span>
-    <span>仅供学术互助与自嘲使用，话术请按真实情况修改后再用</span>
+    <span>仅供学术互助与自嘲使用，话术请按真实情况修改后再用 · <a href="https://github.com/huanglihui123456789-web/xihuadiyi/issues" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">反馈 / 提需求</a></span>
   </div>
 </footer>
+
+<div class="guide-mask" id="guideModal" style="display:none">
+  <div class="guide-card">
+    <h3>欢迎来到组会求生舱</h3>
+    <ol>
+      <li><b>降维转述</b>——贴一段论文黑话，生成大白话逐字稿和 15 秒口播脚本</li>
+      <li><b>导师聊天室</b>——选一位导师人设（也可以照着真导师捏一个），ta 会对你的材料无限追问，回答够硬才放行</li>
+      <li><b>生存指数</b>——交出完整汇报材料，测测你有多大把握活着走出组会</li>
+    </ol>
+    <button class="btn btn-primary" id="guideOk">开始求生</button>
+    <p class="hint">全程免费 · 所有数据只存在你自己的浏览器里</p>
+  </div>
+</div>
 
 <div class="toast" id="toast"></div>
 
@@ -959,7 +1030,7 @@ async function llmTutorTurn(q,userAns,historyArr){
   const kcard=knowledgeFor(chat.material);
   const axes='你有五个攻击轴可轮换：①数据层（样本、口径、统计效力）②方法与实验设计（对照、消融、baseline 选择依据）③论证链（前提→推理跳跃→结论，哪一步没守住）④工程可行性（成本、部署、规模化）⑤学术表达（概念混用、文献定位、表述过强）。不要总打同一个轴。';
 const LIVENESS='⑤去AI味铁律（违反任何一条都算失败）：a)句子长短要激进交替——短句可以是三五字，然后接长句；b)禁止三件套排比（连续列举恰满三项）、禁止"这不是X而是Y"式伪对仗；c)禁止意义拔高词："标志着""具有重要意义""值得注意的是"；d)不要每次都换个同义词说同一件事——真人爱重复自己的口头禅和关键词；e)允许不完美的结构：可以没有总结句、可以直接反问收尾、可以用"嗯？""听到没？"这类尾巴；f)禁止对称的总-分-总回应结构。';
-const sys='你在一个"导师夺命连环问模拟器"里扮演'+tone.name+'的资深研究生导师，正在自己办公室和学生单独谈话。请把自己当成活人：有脾气、有口头禅、会哼笑一声、会用反问句和停顿施压。无限追问模式：学生回答不够硬就一直追同一主题，直到你判断 pass。学生材料：「'+chat.material.slice(0,600)+'」。当前主题：「'+q.essence+'」（本题原问法：「'+String(q.q||'').slice(0,90)+'」），该主题第'+(chat.round+2)+'回合。'+axes+'\n学科知识军火库（你是该领域资深专家：追问必须用上其中具体概念与门槛数字，体现专业知识碾压；例句仅供风格参考，严禁照抄）：\n'+kcard+'\n人设基调（用行为刻画而非形容词堆砌）：'+tone.style+'\n示范台词（仅用于锚定语气与节奏，其内容严禁照抄或微调复用）：'+tone.ex.join('／')+'\n说话铁律：①像真人聊天，禁止"首先/其次/综上"、禁止干巴巴的一句话点评；②可以用1~3个短句层层逼近，带语气词（嗯、哦、啧、呵）；③优先抓学生材料或其刚说的话里的具体细节反击，比如「你材料第三行写的 91.2%？误差棒呢？」「你刚才自己说要补实验，补什么？什么时候？」；④允许温和或凶狠由你的性格决定，但不许出戏解释规则；'+LIVENESS+'\n另加两条：a)你已听了'+historyArr.length+'轮对话，别重复任何前几轮说过的话——每轮都必须有新信息量，同一层级的追问只能换角度重打；b)界面上的话术锦囊和学生材料是内容来源，但严禁整句照抄。\n判定标准：pass=true 仅当回答里有真东西——具体数字/数据来源/明确期限的行动承诺/主动承认局限并给出补救；空洞表态（努力改进型）、答非所问、复读我的问题、明显胡编 → pass=false。\n输出严格JSON：{"pass":true/false,"reply":"导师的话，60~150字，鲜活口语"}';
+const sys='你在一个"导师夺命连环问模拟器"里扮演'+tone.name+'的资深研究生导师，正在自己办公室和学生单独谈话。请把自己当成活人：有脾气、有口头禅、会哼笑一声、会用反问句和停顿施压。无限追问模式：学生回答不够硬就一直追同一主题，直到你判断 pass。学生材料：「'+chat.material.slice(0,600)+'」。当前主题：「'+q.essence+'」（本题原问法：「'+String(q.q||'').slice(0,90)+'」），该主题第'+(chat.round+2)+'回合。'+axes+'\n学科知识军火库（你是该领域资深专家：追问必须用上其中具体概念与门槛数字，体现专业知识碾压；例句仅供风格参考，严禁照抄）：\n'+kcard+'\n人设基调（用行为刻画而非形容词堆砌）：'+tone.style+'\n示范台词（仅用于锚定语气与节奏，其内容严禁照抄或微调复用）：'+tone.ex.join('／')+'\n说话铁律：①像真人聊天，禁止"首先/其次/综上"、禁止干巴巴的一句话点评；②可以用1~3个短句层层逼近，带语气词（嗯、哦、啧、呵）；③优先抓学生材料或其刚说的话里的具体细节反击，比如「你材料第三行写的 91.2%？误差棒呢？」「你刚才自己说要补实验，补什么？什么时候？」；④允许温和或凶狠由你的性格决定，但不许出戏解释规则；'+LIVENESS+'\n另加两条：a)你已听了'+historyArr.length+'轮对话，别重复任何前几轮说过的话——每轮都必须有新信息量，同一层级的追问只能换角度重打；b)界面上的话术锦囊和学生材料是内容来源，但严禁整句照抄。\n判定标准：pass=true 仅当回答里有真东西——具体数字/数据来源/明确期限的行动承诺/主动承认局限并给出补救；空洞表态（努力改进型）、答非所问、复读我的问题、明显胡编 → pass=false。'+(persona==='custom'&&TONE.custom&&TONE.custom.heat>=4?'（你的判定从严：回答里有一处含糊就算 pass=false，继续追。）':persona==='custom'&&TONE.custom&&TONE.custom.heat<=2?'（你的判定偏宽：回答有实质内容即 pass=true，不吹毛求疵。）':'')+'\n输出严格JSON：{"pass":true/false,"reply":"导师的话，60~150字，鲜活口语"}';
   const hist=historyArr.slice(-6).map(h=>h.role==='tutor'?'导师：'+h.text:'学生：'+h.text).join('\n');
   const user=hist+'\n学生最新回答：'+userAns+'\n输出JSON。';
   const j=await LLM.chatJSON([{role:'system',content:sys},{role:'user',content:user}],500,0.92);
@@ -1298,16 +1369,41 @@ function ensureCustomCard(){
   }
   return el;
 }
-function applyCustom(d,tick,alias,select){
+const HEAT_TXT=['放养佛系','温和讲理','标准严格','高压凶狠','地狱拷问'];
+function heatText(v){return HEAT_TXT[(Math.max(1,Math.min(5,+v||3)))-1];}
+/* 把结构化画像字段合成一段带标签的提示词——比用户原文裸拼精准得多 */
+function buildCustomStyle(j){
+  j=j||{};const parts=[];
+  if(j.mood)parts.push('【脾气气质】'+j.mood+'——语气、施压与缓和方式都要符合这个气质');
+  if(j.heat&&+j.heat!==3)parts.push('【严苛度】'+j.heat+'/5'+(+j.heat>=4?'，高压逼近，不轻易放行，一处没钉死就继续追':(+j.heat<=2?'，温和讲理，学生答到七成也给台阶':'')));
+  if(j.focus&&j.focus.length)parts.push('【常盯死穴】'+j.focus.join('、')+'——发难优先往这些方向打，并结合学生材料里对应的具体内容');
+  if(j.d)parts.push('【行为细节】'+j.d);
+  if(j.tick)parts.push('【口头禅】“'+j.tick+'”——说话习惯，每隔两三句自然融入一次，禁止每句都用');
+  return parts.join('；')+'。（整体攻防节奏参考'+TONE[j.alias||'dream'].name+'的行为池，但以上所有画像描述优先级最高）';
+}
+function readCustForm(){
+  return {
+    d:document.getElementById('taCust').value.trim(),
+    tick:document.getElementById('ipTick').value.trim(),
+    alias:document.getElementById('selAlias').value,
+    mood:document.getElementById('selMood').value,
+    heat:+document.getElementById('ipHeat').value||3,
+    focus:$$('#focusChips input:checked').map(function(x){return x.value;})
+  };
+}
+function applyCustom(j,select){
+  j=j||{};
+  const alias=j.alias||'dream';
   TONE.custom={
-    name:tick?('「'+tick+'」型'):'自定义导师',
-    style:d+'（整体攻防节奏参考'+TONE[alias].name+'，但以上描述优先级最高）',
-    ex:TONE[alias].ex.slice(0),alias:alias};
+    name:j.tick?('「'+j.tick+'」型'):'自定义导师',
+    style:buildCustomStyle(j),
+    ex:TONE[alias].ex.slice(0),alias:alias,heat:+j.heat||3};
   normTone();
   personaNames.custom=TONE.custom.name;
   const c=ensureCustomCard();
-  c.querySelector('#custBrief').textContent=d.length>36?d.slice(0,36)+'…':d;
-  c.querySelector('.quote').textContent=tick?('“'+tick+'”'):'“…（描述见上）”';
+  const brief=[j.mood,j.heat?('严苛'+heatText(j.heat)):'',j.focus&&j.focus.length?('盯'+j.focus.join('·')):''].filter(Boolean).join('｜');
+  c.querySelector('#custBrief').textContent=brief||(j.d?(j.d.length>36?j.d.slice(0,36)+'…':j.d):'未创建');
+  c.querySelector('.quote').textContent=j.tick?('“'+j.tick+'”'):'“…（描述见上）”';
   if(select){
     persona='custom';
     $$('.persona').forEach(x=>x.classList.remove('on'));
@@ -1315,19 +1411,71 @@ function applyCustom(d,tick,alias,select){
     document.getElementById('personaName').textContent=personaNames.custom;
   }
 }
+/* 实时画像速览 */
+function updCustPreview(){
+  const j=readCustForm();const bits=[];
+  if(j.mood)bits.push(j.mood);
+  if(j.heat!==3)bits.push(heatText(j.heat));
+  if(j.focus.length)bits.push('盯'+j.focus.join('/'));
+  if(j.tick)bits.push('“'+j.tick+'”');
+  if(j.d)bits.push(j.d.length>24?j.d.slice(0,24)+'…':j.d);
+  document.getElementById('custPreview').textContent=bits.length?('画像速览：'+bits.join(' · ')+'（点「保存并选用」生效）'):'';
+}
+['taCust','ipTick','selAlias','selMood'].forEach(function(id){document.getElementById(id).addEventListener('input',updCustPreview);});
+document.getElementById('ipHeat').addEventListener('input',function(){
+  document.getElementById('heatLabel').textContent=heatText(this.value);updCustPreview();
+});
+$$('#focusChips input').forEach(function(cb){cb.addEventListener('change',function(){
+  cb.closest('.chip').classList.toggle('on',cb.checked);updCustPreview();
+});});
+/* 懒人示例：教用户怎么写才像 */
+const CUST_EG=[
+  {mood:'阴阳怪气',heat:4,focus:['数据细节','写作规范'],
+   d:'组会从不迟到但记性极好，你三周前随口说过的话他都翻旧账；爱当众把你的材料翻到某一页让你自己念；你一含糊他就笑眯眯“哦”一声，然后接着追。',
+   tick:'哦～是吗？'},
+  {mood:'温柔刀·先夸后杀',heat:3,focus:['理论创新','文献功底'],
+   d:'永远先真诚地夸你两点，再停顿两秒说“但是”；驳回你时语气极轻，却从未让步过；被追问急了就说“这个问题很有意思，留给你思考”。',
+   tick:'但是……'},
+  {mood:'絮叨反复',heat:3,focus:['进度管理','实验方法'],
+   d:'爱从你刚入学时讲起，一段话能绕三个题；说完要点必问“听懂了吗”，你点头他还要再确认一遍；但他记的每一笔账都准，进度拖没拖他一清二楚。',
+   tick:'我跟你说啊'}
+];
+$$('.demo-cust').forEach(function(b){b.addEventListener('click',function(){
+  const e=CUST_EG[+b.dataset.eg];
+  document.getElementById('selMood').value=e.mood;
+  document.getElementById('ipHeat').value=e.heat;
+  document.getElementById('heatLabel').textContent=heatText(e.heat);
+  document.getElementById('taCust').value=e.d;
+  document.getElementById('ipTick').value=e.tick;
+  $$('#focusChips input').forEach(function(cb){
+    cb.checked=e.focus.indexOf(cb.value)>=0;
+    cb.closest('.chip').classList.toggle('on',cb.checked);
+  });
+  updCustPreview();
+});});
 $('#btnSaveCust').addEventListener('click',()=>{
-  const d=document.getElementById('taCust').value.trim();
-  if(d.length<10){_say('再多写几句——至少 10 个字，越具体越像真的。');return;}
-  const tick=document.getElementById('ipTick').value.trim();
-  const alias=document.getElementById('selAlias').value;
-  try{localStorage.setItem('zc_custom_mentor',JSON.stringify({d:d,tick:tick,alias:alias}));}catch(e){}
-  applyCustom(d,tick,alias,true);
+  const j=readCustForm();
+  if(!j.d&&!j.mood&&!j.focus.length&&!j.tick){_say('总得画点什么——选个脾气、勾几个死穴，或者写两句具体事迹。');return;}
+  try{localStorage.setItem('zc_custom_mentor',JSON.stringify(j));}catch(e){}
+  applyCustom(j,true);
   _say('已保存到本机。现在贴入材料，就能接受 ta 的拷问了。');
 });
 (function(){
   try{
     const s=localStorage.getItem('zc_custom_mentor');if(!s)return;
-    const j=JSON.parse(s);if(j&&j.d)applyCustom(j.d,j.tick||'',j.alias||'dream',false);
+    const j=JSON.parse(s);if(j&&(j.d||j.mood||(j.focus&&j.focus.length)||j.tick)){
+      document.getElementById('taCust').value=j.d||'';
+      document.getElementById('ipTick').value=j.tick||'';
+      document.getElementById('selAlias').value=j.alias||'dream';
+      document.getElementById('selMood').value=j.mood||'';
+      document.getElementById('ipHeat').value=j.heat||3;
+      document.getElementById('heatLabel').textContent=heatText(j.heat||3);
+      (j.focus||[]).forEach(function(f){
+        const cb=document.querySelector('#focusChips input[value="'+f+'"]');
+        if(cb){cb.checked=true;cb.closest('.chip').classList.add('on');}
+      });
+      applyCustom(j,false);updCustPreview();
+    }
   }catch(e){}
 })();
 
@@ -1337,7 +1485,7 @@ $('#btnGenCode').addEventListener('click',()=>{
   if(persona==='custom'){
     let j={};try{j=JSON.parse(localStorage.getItem('zc_custom_mentor'))||{};}catch(e){}
     payload={v:1,k:j.alias||'dream',n:personaNames.custom,
-      s:(j.d||'')+(j.tick?('｜口头禅：'+j.tick):''),x:TONE.custom.ex.slice(0,2)};
+      s:buildCustomStyle(j),x:TONE.custom.ex.slice(0,2)};
   }else{
     const t=TONE[persona]||TONE.detail;
     payload={v:1,k:t.alias||persona,n:t.name,s:t.style,x:t.ex.slice(0,2)};
@@ -1643,6 +1791,7 @@ async function finishChat(mode){
       :'高危：大部分发难点没能撑住。建议把每道题的自救话术抄进讲稿备注区，重点加固「'+esc(hardest?hardest.essence:'')+'」。')+
    '</div>'+
    '<button class="btn btn-primary restart-btn">再战一场</button> '+
+   '<button class="btn btn-ghost shot-btn">生成对话截图</button> '+
    '<button class="btn btn-ghost back-setup-btn">返回修改材料 / 人设</button>';
   chatRoot().appendChild(rep);
   rep.scrollIntoView({behavior:'smooth',block:'nearest'});
@@ -1652,6 +1801,8 @@ async function finishChat(mode){
     $('#chatBox').innerHTML=''; $('#setupB').style.display='';
     window.scrollTo({top:$('#f-b').offsetTop-64,behavior:'smooth'});
   });
+  const s0=rep.querySelector('.shot-btn');
+  if(s0) s0.addEventListener('click',()=>makeChatShot());
 }
 
 /* ---------- 聊天室启动 ---------- */
@@ -1762,9 +1913,41 @@ function computeRisk(text){
   const tier=survive>=85?['稳如老狗','可从容微笑、适当反问']
             :survive>=60?['有惊无险','重点区域提前背话术']
             :['深呼吸再上台','建议立刻按功能B补课'];
-  return {survive,dimScores,tier,warnPick,flawCount:flaws.length};
+  return {survive,dimScores,tier,warnPick,flawCount:flaws.length,flaws};
+}
+/* ---------- AI 深度评审：LLM 结构化增强，失败静默回落本地结果 ---------- */
+let _aiDeepSeq=0;
+async function aiDeepAssess(val,flaws){
+  const box=$('#aiDeep'); if(!box) return;
+  const seq=++_aiDeepSeq;
+  box.innerHTML='<div class="ai-deep"><h4>AI 深度评审 · 批阅中…</h4><p class="hint">正在请一位毒舌评审通读你的材料，约十秒。</p></div>';
+  try{
+    const sys='你是组会评审现场最毒舌也最专业的学术评审。输入是学生的完整汇报材料，以及本地规则引擎已检出的隐患清单（请勿复述清单内容，去找规则抓不到的深层问题）。输出严格JSON：{"fatal":["致命问题，最多3条，每条≤30字，必须落到材料里的具体数字或具体说法上"],"weak":["薄弱环节，最多3条，每条≤25字"],"advice":["最优先的抢救动作，最多3条，每条≤30字，可执行"],"note":"一句话犀利总评，≤40字，毒舌但专业"}。禁止空话套话，每条都必须针对这份材料本身。';
+    const flawTxt=(flaws||[]).slice(0,8).map(f=>'·'+(f.hitNote||f.missNote||f.essence)).join('\n');
+    const j=await LLM.chatJSON([{role:'system',content:sys},{role:'user',content:'材料：'+val.slice(0,1200)+'\n\n规则引擎已检出（勿重复）：\n'+flawTxt}],700,0.8);
+    if(seq!==_aiDeepSeq) return;
+    const li=(arr,cls)=>((arr&&arr.length)?arr.slice(0,3):[]).map(x=>'<li class="'+cls+'">'+esc(String(x).slice(0,60))+'</li>').join('');
+    box.innerHTML='<div class="ai-deep"><h4>AI 深度评审</h4>'+
+      (j.fatal&&j.fatal.length?'<p class="hint" style="margin-top:2px">致命问题</p><ul>'+li(j.fatal,'')+'</ul>':'')+
+      (j.weak&&j.weak.length?'<p class="hint" style="margin-top:10px">薄弱环节</p><ul>'+li(j.weak,'weak')+'</ul>':'')+
+      (j.advice&&j.advice.length?'<p class="hint" style="margin-top:10px">抢救动作（按优先级）</p><ul>'+li(j.advice,'adv')+'</ul>':'')+
+      (j.note?'<p class="ad-note">评审批语：「'+esc(String(j.note).slice(0,60))+'」</p>':'')+
+      '</div>';
+  }catch(e){ if(seq!==_aiDeepSeq) return; box.innerHTML=''; }
 }
 function renderRisk(res){
+  /* 历史对比：先读上次记录，再把本次写入 */
+  let histBadge='';
+  let hist=[];
+  try{hist=JSON.parse(localStorage.getItem('zc_hist'))||[];}catch(e){}
+  if(hist.length){
+    const diff=res.survive-hist[hist.length-1].v;
+    histBadge=diff>0?'<span class="hist-badge up">比上次 +'+diff+'%</span>'
+             :diff<0?'<span class="hist-badge down">比上次 '+diff+'%</span>'
+             :'<span class="hist-badge">与上次持平</span>';
+  }
+  hist.push({t:Date.now(),v:res.survive});
+  try{localStorage.setItem('zc_hist',JSON.stringify(hist.slice(-20)));}catch(e){}
   const colorsOK=res.survive>=85?'var(--ok)':'var(--accent)';
   const rows=res.dimScores.map((d,i)=>
     '<div class="dim-row"><div class="dim-main" data-d="'+i+'">'+
@@ -1778,12 +1961,13 @@ function renderRisk(res){
      '<div class="gauge-wrap">'+
        gaugeSVG()+
        '<div class="tier">'+res.tier[0]+'</div>'+
-       '<p class="tier-sub">'+res.tier[1]+' · 命中隐患 '+res.flawCount+' 处</p>'+
+       '<p class="tier-sub">'+res.tier[1]+' · 命中隐患 '+res.flawCount+' 处'+histBadge+'</p>'+
        '<div class="share-row"><button class="btn btn-primary" id="genCard">生成分享卡片</button></div>'+
      '</div>'+
      '<div><div class="dim-list">'+rows+'</div>'+
      '<p class="hint" style="margin-top:14px">预计发难重点：'+esc(res.warnPick)+'。点击行查看明细。</p></div>'+
-   '</div>';
+   '</div>'+
+   '<div id="aiDeep"></div>';
 
   // 表盘动画
   animateGauge(res.survive,colorsOK);
@@ -1827,7 +2011,11 @@ $('#btnC').addEventListener('click',()=>{
   if(val.length<15){ err.classList.add('show'); $('#taC').focus(); return; }
   err.classList.remove('show');
   renderSkeleton($('#outC'),4);
-  setTimeout(()=>renderRisk(computeRisk(val)),800);
+  setTimeout(()=>{
+    const res=computeRisk(val);
+    renderRisk(res);
+    aiDeepAssess(val,res.flaws);
+  },800);
 });
 $$('.demo-c').forEach(b=>b.addEventListener('click',()=>{
   $('#taC').value='本次汇报介绍本人硕士课题的中期进展。目前完成了文献综述与初步实验设计，在小规模数据上进行了探索性尝试，效果达到预期目标。下一步计划开展更大规模的正式实验并撰写论文初稿。';
@@ -1906,10 +2094,96 @@ function wrapText(ctx,text,x,y,maxW,lh){
   }
   if(line) ctx.fillText(line,x,yy);
 }
+/* ---------- 对话截图长图：把 chat.log 排成米白稿纸聊天体 ---------- */
+let lastShotURL='';
+function roundRectPath(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+function makeChatShot(){
+  if(!chat||!chat.log||!chat.log.length){ showToast('还没有对话内容'); return; }
+  const msgs=chat.log.slice(-12);
+  const W=1080, padX=84, bubPad=28, lineH=48, gap=46;
+  const maxW=W-padX*2-180;
+  const fontBody='30px "PingFang SC","Microsoft YaHei",sans-serif';
+  function wrapLines(ctx,text,mw){
+    const out=[]; let line='';
+    for(const ch of String(text).replace(/\s+/g,' ')){
+      if(ctx.measureText(line+ch).width>mw){ out.push(line); line=ch; }
+      else line+=ch;
+    }
+    if(line) out.push(line);
+    return out;
+  }
+  /* 先用临时上下文预排，算出画布高度 */
+  const ctxm=document.createElement('canvas').getContext('2d');
+  ctxm.font=fontBody;
+  const items=msgs.map(m=>{
+    const lines=wrapLines(ctxm,m.text,maxW);
+    return {role:m.role,lines,h:lines.length*lineH+bubPad*2+16};
+  });
+  let H=320+items.reduce((n,it)=>n+it.h+gap,0)+240;
+  H=Math.min(Math.max(H,1500),8192);
+  const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+  const ctx=cv.getContext('2d');
+  ctx.fillStyle='#f7f3ea'; ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='rgba(33,28,21,.25)'; ctx.lineWidth=2;
+  ctx.strokeRect(44,44,W-88,H-88);
+  /* 头部 */
+  ctx.textAlign='left';
+  ctx.fillStyle='#b8332a'; ctx.fillRect(84,104,20,20);
+  ctx.fillStyle='#221d15'; ctx.font='600 38px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillText('组会求生舱',118,124);
+  ctx.fillStyle='#6e6659'; ctx.font='26px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillText('组会实录 · 对手：'+(TONE[persona]?TONE[persona].name:'导师')+' · 共 '+chat.log.length+' 回合',84,196);
+  ctx.strokeStyle='rgba(33,28,21,.18)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(140,240); ctx.lineTo(W-140,240); ctx.stroke();
+  /* 气泡：导师居左白底红边（朱批），学生居右灰底 */
+  let y=310;
+  for(const it of items){
+    const isTutor=it.role==='tutor';
+    const bw=Math.max(200,Math.min(maxW,Math.max(...it.lines.map(l=>ctxm.measureText(l).width)))+bubPad*2);
+    const bh=it.h;
+    const bx=isTutor?padX:W-padX-bw;
+    ctx.fillStyle=isTutor?'#fffdf7':'#efe9dc';
+    ctx.strokeStyle=isTutor?'#b8332a':'rgba(33,28,21,.22)';
+    ctx.lineWidth=isTutor?3:1.5;
+    roundRectPath(ctx,bx,y,bw,bh,16); ctx.fill(); ctx.stroke();
+    ctx.fillStyle=isTutor?'#b8332a':'#6e6659';
+    ctx.font='600 22px "PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.fillText(isTutor?'导师':'我',bx,y-12);
+    ctx.fillStyle='#221d15'; ctx.font=fontBody;
+    let yy=y+bubPad+12;
+    for(const l of it.lines){ ctx.fillText(l,bx+bubPad,yy); yy+=lineH; }
+    y+=bh+gap;
+  }
+  /* 底部 slogan */
+  ctx.textAlign='center';
+  ctx.fillStyle='#6e6659'; ctx.font='30px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillText('你也来测测：撑得住你导师几轮？',W/2,H-150);
+  ctx.fillStyle='#b8332a'; ctx.font='600 34px "Songti SC","SimSun",serif';
+  ctx.fillText('组会求生舱',W/2,H-96);
+  ctx.textAlign='left';
+  lastShotURL=cv.toDataURL('image/png');
+  const wrap=document.createElement('div'); wrap.className='shot-wrap';
+  wrap.innerHTML='<img alt="组会对话截图"><div style="margin-top:10px"><button class="btn btn-primary" id="dlShot">下载对话截图 PNG</button></div>';
+  wrap.querySelector('img').src=lastShotURL;
+  chatRoot().appendChild(wrap);
+  wrap.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
 document.addEventListener('click',e=>{
   if(e.target.id==='dlCard'&&lastCardURL){
     const a=document.createElement('a');
     a.href=lastCardURL; a.download='组会生存卡.png'; a.click();
+  }
+  if(e.target.id==='dlShot'&&lastShotURL){
+    const a=document.createElement('a');
+    a.href=lastShotURL; a.download='组会对话截图.png'; a.click();
   }
 });
 
@@ -1922,6 +2196,22 @@ function bindCopyBtns(scope,fullText){
     });
   });
 }
+
+/* ---------- 首次引导 ---------- */
+document.addEventListener('click',e=>{
+  if(e.target.id==='guideOk'){
+    try{localStorage.setItem('zc_seen_guide','1');}catch(err){}
+    const m=$('#guideModal'); if(m) m.style.display='none';
+  }
+});
+(function(){
+  let seen=false;
+  try{seen=!!localStorage.getItem('zc_seen_guide');}catch(e){}
+  if(!seen){
+    const m=$('#guideModal');
+    if(m) m.style.display='flex';
+  }
+})();
 
 /* 顶部导航 平滑降级：锚点跳转后失焦样式可选，无需 JS */
 syncEngineUI();
