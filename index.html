@@ -4,7 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#f7f3ea">
-<title>组会求生舱 · 把论文黑话变人话</title>
+<meta name="description" content="粘贴论文正文或实验结论，AI 30秒生成三句大白话逐字稿（含现实比喻与演讲节奏标注）；五位 AI 导师风格迥异，对你的材料无限追问、模拟真实组会拷问，最后出具组会生存指数报告。免费、免登录、纯前端。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="组会求生舱 · 汇报前先把这一周的骂挨完">
+<meta property="og:description" content="黑话变人话 + AI 导师无限夺命连环问 + 组会生存指数。做答辩、开组会的学生专用排练场。">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23b8332a'/%3E%3Cpath d='M16 8v16M10.5 12c2-1.8 4.2-1.8 5.5-.3M21.5 12c-2-1.8-4.2-1.8-5.5-.3M11 20h10' stroke='%23fff' stroke-width='2.6' stroke-linecap='round' fill='none'/%3E%3C/svg%3E">
+<title>组会求生舱 · 把论文黑话变人话，替你扛住夺命连环问</title>
 <style>
 /* ============ 设计令牌 ============ */
 :root{
@@ -745,16 +751,47 @@ const LLM={
   get key(){ try{return localStorage.getItem(this.KEY_NAME)||this.KEY_DEFAULT}catch(e){return this.KEY_DEFAULT} },
   hasKey(){ return true },
   enabled(){ return true },
-  async chat(messages,maxTokens){
-    const r=await fetch(this.BASE,{method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+this.key},
-      body:JSON.stringify({model:this.MODEL,messages,temperature:(arguments[2]!==undefined?arguments[2]:0.9),max_tokens:maxTokens||900}),
-      signal:AbortSignal.timeout(35000)});
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    const j=await r.json();
-    const t=j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content;
-    if(!t) throw new Error('empty');
-    return t;
+  markOutage(kind){
+    let b=document.getElementById('aiBanner');
+    if(!b){ b=document.createElement('div'); b.id='aiBanner';
+      b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99;padding:9px 16px;font-size:.82rem;line-height:1.6;display:flex;gap:12px;align-items:center;justify-content:center;background:#b8332a;color:#fdfbf5';
+      const btn=document.createElement('button');
+      btn.textContent='知道了';btn.style.cssText='border:1px solid rgba(255,255,255,.55);background:none;color:#fff;border-radius:999px;padding:2px 12px;font-size:.75rem;cursor:pointer';
+      btn.onclick=()=>b.remove();
+      b.appendChild(document.createElement('span'));b.appendChild(btn);
+      (document.body||document.documentElement).appendChild(b);
+    }
+    b.firstChild.textContent = kind==='quota'
+      ? '⚠ 内置公共 Key 的 AI 额度已耗尽——AI 功能暂时回落到本地引擎（功能完整但台词更朴素）。你有 SiliconFlow Key 的话，点右上角设置填入即可立刻恢复。'
+      : '⚠ AI 服务持续不可用，已切换本地引擎。稍后自动恢复，无需刷新。';
+    if(kind==='quota'&&document.body) document.body.style.paddingTop=b.offsetHeight+'px';
+  },
+  async chat(messages,maxTokens,temp){
+    let lastErr=null;
+    for(let attempt=0;attempt<2;attempt++){
+      if(attempt===1) await new Promise(r=>setTimeout(r,900));
+      try{
+        const r=await fetch(this.BASE,{method:'POST',
+          headers:{'Content-Type':'application/json','Authorization':'Bearer '+this.key},
+          body:JSON.stringify({model:this.MODEL,messages,temperature:(temp!==undefined?temp:0.9),max_tokens:maxTokens||900}),
+          signal:AbortSignal.timeout(35000)});
+        if(r.status===401||r.status===402||r.status===429&&attempt===1){
+          const e=new Error('HTTP '+r.status);
+          if(r.status!==429){ this.markOutage('quota'); }
+          throw Object.assign(e,{fatal:r.status!==429});
+        }
+        if(!r.ok){ lastErr=new Error('HTTP '+r.status); continue; }
+        const j=await r.json();
+        const t=j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content;
+        if(!t){ lastErr=new Error('empty'); continue; }
+        return t;
+      }catch(e){
+        if(e.fatal) throw e;
+        lastErr=e; 
+      }
+    }
+    if(lastErr&&String(lastErr.message).indexOf('HTTP 4')===0) {/* 网络/服务侧错误保持普通失败路径 */}
+    throw lastErr||new Error('LLM fail');
   },
   async chatJSON(messages,maxTokens,temp){
     const t=await this.chat(messages,maxTokens||900,temp);
@@ -768,17 +805,23 @@ function syncEngineUI(){
   if(h) h.textContent='AI 转写已就绪';
 }
 
-/* ---------- 功能A：LLM 转写 ---------- */
+/* ---------- 功能A：LLM 转写（同一段材料会话内缓存，不重复烧额度） ---------- */
+const _speechCache=new Map();
 async function llmGenSpeech(text){
-  const sys='你是学术汇报口语教练，风格：像一位特别会把论文讲成段子的学长在帮学弟备稿。输入是一段论文正文/实验结论。输出严格JSON（仅键名和格式不可变，内容尽情发挥）：{"domain":"机器学习|医学实验|材料化学|经济金融|社科问卷|通用之一","hook":"一句大白话核心结论，带一个鲜活贴切的现实比喻","script":["3句口头逐字稿"],"tips":"一行贴PPT建议"}。创作要求：①长句拆碎、公式符号转口语(如p<0.01说成"显著性极强")；②语言越像真人说话越好，自然带过渡词、留悬念、先抑后扬都可以；③在合适位置插入节奏标签[停顿1s]/[加重语气]/[手指PPT曲线]/[放慢语速]；④比喻欢迎接地气甚至好笑，只要贴切；别怕口语化过头。';
-  const j=await LLM.chatJSON([{role:'system',content:sys},{role:'user',content:text}],1100);
+  const ck=text.trim().slice(0,2000);
+  if(_speechCache.has(ck)) return _speechCache.get(ck);
+  const sys='你是学术汇报口语教练，风格：像一位特别会把论文讲成段子的学长在帮学弟备稿。输入是一段论文正文/实验结论。输出严格JSON（仅键名和格式不可变，内容尽情发挥）：{"domain":"机器学习|医学实验|材料化学|经济金融|社科问卷|通用之一","hook":"一句大白话核心结论，带一个鲜活贴切的现实比喻","script":["3~5句口头逐字稿：按内容量自然决定句数，短内容3句即可，信息密的长结论拆到4~5句，别硬凑也别偷懒"],"tips":"一行贴PPT建议"}。创作要求：①长句拆碎、公式符号转口语(如p<0.01说成"显著性极强")；②语言越像真人说话越好，自然带过渡词、留悬念、先抑后扬都可以；③在合适位置插入节奏标签[停顿1s]/[加重语气]/[手指PPT曲线]/[放慢语速]；④比喻欢迎接地气甚至好笑，只要贴切；别怕口语化过头。';
+  const j=await LLM.chatJSON([{role:'system',content:sys},{role:'user',content:text}],1300);
   if(!j.hook||!Array.isArray(j.script)||j.script.length<3) throw new Error('bad shape');
   const tagRe=/\[(停顿 ?1s?|加重语气|手指 ?PPT(?:曲线)?|放慢语速)\]/g;
   const hookHtml='<span class="hl-red">'+esc(j.hook)+'</span>';
-  const script=j.script.slice(0,4).map(s=>'<span class="beat">'+esc(s).replace(tagRe,'<i class="tag-beat">[$1]</i>')+'</span>');
-  return {domainName:j.domain+' · AI 转写',hookPlain:j.hook,hookHtml,script,
+  const script=j.script.slice(0,5).map(s=>'<span class="beat">'+esc(s).replace(tagRe,'<i class="tag-beat">[$1]</i>')+'</span>');
+  const res={domainName:j.domain+' · AI 转写',hookPlain:j.hook,hookHtml,script,
     pptTip:esc(j.tips||'提炼后只留一个数字结论写在页面上'),
-    plainText:j.hook+'\n\n'+j.script.join('\n\n')+'\n\n[贴PPT建议] '+(j.tips||'')};
+    plainText:j.hook+'\n\n'+j.script.slice(0,5).join('\n\n')+'\n\n[贴PPT建议] '+(j.tips||'')};
+  if(_speechCache.size>40) _speechCache.clear();
+  _speechCache.set(ck,res);
+  return res;
 }
 
 /* ---------- 15秒口播脚本（抖音分发素材） ---------- */
