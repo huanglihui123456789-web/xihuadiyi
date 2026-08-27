@@ -415,15 +415,15 @@ textarea:focus,input:focus{box-shadow:0 0 0 3px rgba(184,51,42,.1)}
 <section class="fn" id="f-a">
   <div class="wrap">
     <div class="fn-head"><span class="fn-no">功能 A</span><h2>学术黑话 → 演讲口语</h2></div>
-    <p class="fn-sub">粘贴一段论文正文或实验结论。引擎抽取核心结论、配上现实比喻、拆解长难句，并生成可直接照读的逐字稿与节奏提示。</p>
+    <p class="fn-sub">粘贴一段论文正文或实验结论——直接手打几句话也行，长短不限。引擎抽取核心结论、配上现实比喻、拆解长难句，并生成可直接照读的逐字稿与节奏提示。</p>
 
-    <textarea id="taA" rows="7" placeholder="例：为了验证所提方法的有效性，我们在两个公开基准数据集上进行了大量实验，结果表明本方法相较于现有最优基线模型在准确率上提升了3.8个百分点（p&lt;0.01），验证了其较强的泛化能力与鲁棒性……"></textarea>
+    <textarea id="taA" rows="7" placeholder="粘贴论文段落，或直接手打你的研究思路——长短不限。例：为了验证所提方法的有效性，我们在两个公开基准数据集上进行了大量实验，结果表明本方法相较于现有最优基线模型在准确率上提升了3.8个百分点（p&lt;0.01），验证了其较强的泛化能力与鲁棒性……"></textarea>
     <div class="row-actions">
       <button class="btn btn-primary" id="btnA">生成口语稿</button>
       <button class="btn btn-ghost demo-a">塞入示例文本</button>
       <span class="hint" id="modeHintA">纯本地分析，不上传任何内容</span>
     </div>
-    <p class="field-error" id="errA">先粘贴一段论文内容再点击生成。</p>
+    <p class="field-error" id="errA">先写点什么——粘贴或手动输入都行。</p>
 
     <div id="outA"></div>
   </div>
@@ -499,7 +499,7 @@ textarea:focus,input:focus{box-shadow:0 0 0 3px rgba(184,51,42,.1)}
             <label class="chip"><input type="checkbox" value="进度管理">进度管理</label>
             <label class="chip"><input type="checkbox" value="文献功底">文献功底</label>
           </div>
-          <textarea id="taCust" rows="3" placeholder="补充具体事迹（选填但强烈建议）：开会迟到十分钟但记性极好，三周前你随口说的话他都翻旧账；最恨 PPT 错别字；一问到实验设计就突然兴奋……写具体事件，别只写“很严格”这种空话。"></textarea>
+          <textarea id="taCust" rows="3" maxlength="300" placeholder="补充具体事迹（选填但强烈建议）：开会迟到十分钟但记性极好，三周前你随口说的话他都翻旧账；最恨 PPT 错别字；一问到实验设计就突然兴奋……写具体事件，别只写“很严格”这种空话。"></textarea>
           <div style="display:flex;gap:10px;flex-wrap:wrap">
             <input id="ipTick" placeholder="标志性口头禅（可选）" style="flex:1;min-width:160px">
             <select id="selAlias">
@@ -524,13 +524,13 @@ textarea:focus,input:focus{box-shadow:0 0 0 3px rgba(184,51,42,.1)}
     </div>
 
     <div style="margin-top:20px">
-      <textarea id="taB" rows="7" placeholder="粘贴 PPT 大纲或研究摘要。例：本研究提出一种基于注意力机制的轻量化缺陷检测模型，在工业质检数据集上取得优异表现，证明该方法能显著优于传统方案……"></textarea>
+      <textarea id="taB" rows="7" placeholder="粘贴或手动输入 PPT 大纲 / 研究摘要，长短不限。例：本研究提出一种基于注意力机制的轻量化缺陷检测模型，在工业质检数据集上取得优异表现，证明该方法能显著优于传统方案……"></textarea>
       <div class="row-actions">
         <button class="btn btn-primary" id="btnB">进入导师聊天室</button>
         <button class="btn btn-ghost demo-b">塞入示例大纲</button>
         <span class="hint">当前人设：<b id="personaName" style="color:var(--accent)">细节狂魔型</b></span>
       </div>
-      <p class="field-error" id="errB">先选择人设并粘贴汇报材料。</p>
+      <p class="field-error" id="errB">先选择人设，再粘贴或手打几句材料。</p>
     </div>
     </div>
 
@@ -544,13 +544,13 @@ textarea:focus,input:focus{box-shadow:0 0 0 3px rgba(184,51,42,.1)}
     <div class="fn-head"><span class="fn-no">功能 C</span><h2>组会生存指数评估</h2></div>
     <p class="fn-sub">综合本次汇报材料的漏洞密度，估算你走下讲台时的存活概率。支持一键生成分享卡片。</p>
 
-    <textarea id="taC" rows="6" placeholder="粘贴完整汇报材料或研究摘要，建议内容越接近真实讲稿，评估越准……"></textarea>
+    <textarea id="taC" rows="6" placeholder="粘贴完整汇报材料，或直接手打你的研究思路——长短不限，越接近真实讲稿评估越准……"></textarea>
     <div class="row-actions">
       <button class="btn btn-primary" id="btnC">评估生存率</button>
       <button class="btn btn-ghost demo-c">塞入示例材料</button>
       <span class="hint">评分基于 8 类常见致命项启发式检测 + AI 深度评审</span>
     </div>
-    <p class="field-error" id="errC">请先粘贴汇报材料。</p>
+    <p class="field-error" id="errC">先输入点什么——粘贴或手打都行。</p>
 
     <div id="outC"></div>
 
@@ -796,7 +796,7 @@ function renderSkeleton(el,lines){
 $('#btnA').addEventListener('click',async()=>{
   const val=$('#taA').value.trim();
   const err=$('#errA');
-  if(val.length<10){ err.classList.add('show'); $('#taA').focus(); return; }
+  if(val.length<2){ err.classList.add('show'); $('#taA').focus(); return; }
   err.classList.remove('show');
   const out=$('#outA');
   renderSkeleton(out,5);
@@ -1030,7 +1030,7 @@ async function llmTutorTurn(q,userAns,historyArr){
   const kcard=knowledgeFor(chat.material);
   const axes='你有五个攻击轴可轮换：①数据层（样本、口径、统计效力）②方法与实验设计（对照、消融、baseline 选择依据）③论证链（前提→推理跳跃→结论，哪一步没守住）④工程可行性（成本、部署、规模化）⑤学术表达（概念混用、文献定位、表述过强）。不要总打同一个轴。';
 const LIVENESS='⑤去AI味铁律（违反任何一条都算失败）：a)句子长短要激进交替——短句可以是三五字，然后接长句；b)禁止三件套排比（连续列举恰满三项）、禁止"这不是X而是Y"式伪对仗；c)禁止意义拔高词："标志着""具有重要意义""值得注意的是"；d)不要每次都换个同义词说同一件事——真人爱重复自己的口头禅和关键词；e)允许不完美的结构：可以没有总结句、可以直接反问收尾、可以用"嗯？""听到没？"这类尾巴；f)禁止对称的总-分-总回应结构。';
-const sys='你在一个"导师夺命连环问模拟器"里扮演'+tone.name+'的资深研究生导师，正在自己办公室和学生单独谈话。请把自己当成活人：有脾气、有口头禅、会哼笑一声、会用反问句和停顿施压。无限追问模式：学生回答不够硬就一直追同一主题，直到你判断 pass。学生材料：「'+chat.material.slice(0,600)+'」。当前主题：「'+q.essence+'」（本题原问法：「'+String(q.q||'').slice(0,90)+'」），该主题第'+(chat.round+2)+'回合。'+axes+'\n学科知识军火库（你是该领域资深专家：追问必须用上其中具体概念与门槛数字，体现专业知识碾压；例句仅供风格参考，严禁照抄）：\n'+kcard+'\n人设基调（用行为刻画而非形容词堆砌）：'+tone.style+'\n示范台词（仅用于锚定语气与节奏，其内容严禁照抄或微调复用）：'+tone.ex.join('／')+'\n说话铁律：①像真人聊天，禁止"首先/其次/综上"、禁止干巴巴的一句话点评；②可以用1~3个短句层层逼近，带语气词（嗯、哦、啧、呵）；③优先抓学生材料或其刚说的话里的具体细节反击，比如「你材料第三行写的 91.2%？误差棒呢？」「你刚才自己说要补实验，补什么？什么时候？」；④允许温和或凶狠由你的性格决定，但不许出戏解释规则；'+LIVENESS+'\n另加两条：a)你已听了'+historyArr.length+'轮对话，别重复任何前几轮说过的话——每轮都必须有新信息量，同一层级的追问只能换角度重打；b)界面上的话术锦囊和学生材料是内容来源，但严禁整句照抄。\n判定标准：pass=true 仅当回答里有真东西——具体数字/数据来源/明确期限的行动承诺/主动承认局限并给出补救；空洞表态（努力改进型）、答非所问、复读我的问题、明显胡编 → pass=false。'+(persona==='custom'&&TONE.custom&&TONE.custom.heat>=4?'（你的判定从严：回答里有一处含糊就算 pass=false，继续追。）':persona==='custom'&&TONE.custom&&TONE.custom.heat<=2?'（你的判定偏宽：回答有实质内容即 pass=true，不吹毛求疵。）':'')+'\n输出严格JSON：{"pass":true/false,"reply":"导师的话，60~150字，鲜活口语"}';
+const sys='你在一个"导师夺命连环问模拟器"里扮演'+tone.name+'的资深研究生导师，正在自己办公室和学生单独谈话。请把自己当成活人：有脾气、有口头禅、会哼笑一声、会用反问句和停顿施压。无限追问模式：学生回答不够硬就一直追同一主题，直到你判断 pass。学生材料：「'+chat.material.slice(0,600)+'」。当前主题：「'+q.essence+'」（本题原问法：「'+String(q.q||'').slice(0,90)+'」），该主题第'+(chat.round+2)+'回合。'+axes+'\n学科知识军火库（你是该领域资深专家：追问必须用上其中具体概念与门槛数字，体现专业知识碾压；例句仅供风格参考，严禁照抄）：\n'+kcard+'\n人设基调（用行为刻画而非形容词堆砌）：'+tone.style+'\n示范台词（仅用于锚定语气与节奏，其内容严禁照抄或微调复用）：'+tone.ex.join('／')+'\n说话铁律：①像真人聊天，禁止"首先/其次/综上"、禁止干巴巴的一句话点评；②可以用1~3个短句层层逼近，带语气词（嗯、哦、啧、呵）；③优先抓学生材料或其刚说的话里的具体细节反击，比如「你材料第三行写的 91.2%？误差棒呢？」「你刚才自己说要补实验，补什么？什么时候？」；④允许温和或凶狠由你的性格决定，但不许出戏解释规则；'+LIVENESS+'\n另加两条：a)你已听了'+historyArr.length+'轮对话，别重复任何前几轮说过的话——每轮都必须有新信息量，同一层级的追问只能换角度重打；b)界面上的话术锦囊和学生材料是内容来源，但严禁整句照抄。\n判定标准：pass=true 仅当回答里有真东西——具体数字/数据来源/明确期限的行动承诺/主动承认局限并给出补救；空洞表态（努力改进型）、答非所问、复读我的问题、明显胡编 → pass=false。'+((TONE[persona]&&TONE[persona].heat>=4)?'（你的判定从严：回答里有一处含糊就算 pass=false，继续追。）':(TONE[persona]&&TONE[persona].heat&&TONE[persona].heat<=2)?'（你的判定偏宽：回答有实质内容即 pass=true，不吹毛求疵。）':'')+'\n输出严格JSON：{"pass":true/false,"reply":"导师的话，60~150字，鲜活口语"}';
   const hist=historyArr.slice(-6).map(h=>h.role==='tutor'?'导师：'+h.text:'学生：'+h.text).join('\n');
   const user=hist+'\n学生最新回答：'+userAns+'\n输出JSON。';
   const j=await LLM.chatJSON([{role:'system',content:sys},{role:'user',content:user}],500,0.92);
@@ -1377,7 +1377,7 @@ function buildCustomStyle(j){
   if(j.mood)parts.push('【脾气气质】'+j.mood+'——语气、施压与缓和方式都要符合这个气质');
   if(j.heat&&+j.heat!==3)parts.push('【严苛度】'+j.heat+'/5'+(+j.heat>=4?'，高压逼近，不轻易放行，一处没钉死就继续追':(+j.heat<=2?'，温和讲理，学生答到七成也给台阶':'')));
   if(j.focus&&j.focus.length)parts.push('【常盯死穴】'+j.focus.join('、')+'——发难优先往这些方向打，并结合学生材料里对应的具体内容');
-  if(j.d)parts.push('【行为细节】'+j.d);
+  if(j.d)parts.push('【行为细节】'+String(j.d).slice(0,300)+((j.d||'').length>300?'……（细节太长，已取前300字，够用就好）':''));
   if(j.tick)parts.push('【口头禅】“'+j.tick+'”——说话习惯，每隔两三句自然融入一次，禁止每句都用');
   return parts.join('；')+'。（整体攻防节奏参考'+TONE[j.alias||'dream'].name+'的行为池，但以上所有画像描述优先级最高）';
 }
@@ -1485,7 +1485,7 @@ $('#btnGenCode').addEventListener('click',()=>{
   if(persona==='custom'){
     let j={};try{j=JSON.parse(localStorage.getItem('zc_custom_mentor'))||{};}catch(e){}
     payload={v:1,k:j.alias||'dream',n:personaNames.custom,
-      s:buildCustomStyle(j),x:TONE.custom.ex.slice(0,2)};
+      s:buildCustomStyle(j),x:TONE.custom.ex.slice(0,2),h:+j.heat||3};
   }else{
     const t=TONE[persona]||TONE.detail;
     payload={v:1,k:t.alias||persona,n:t.name,s:t.style,x:t.ex.slice(0,2)};
@@ -1510,7 +1510,8 @@ $('#btnImpCode').addEventListener('click',()=>{
       name:(p.n||base.name)+' · 遭遇版',
       style:p.s||base.style,
       ex:(p.x&&p.x.length?p.x:base.ex),
-      alias:p.k};
+      alias:p.k,
+      heat:(+p.h>=1&&+p.h<=5)?+p.h:undefined};
     normTone();
     personaNames.shared=TONE.shared.name;
     let el=document.getElementById('cardShared');
@@ -1870,7 +1871,7 @@ function renderChatShell(){
 $('#btnB').addEventListener('click',()=>{
   const val=$('#taB').value.trim();
   const err=$('#errB');
-  if(val.length<10){ err.classList.add('show'); $('#taB').focus(); return; }
+  if(val.length<2){ err.classList.add('show'); $('#taB').focus(); return; }
   err.classList.remove('show');
   renderChatShell();
 });
@@ -1935,7 +1936,7 @@ async function aiDeepAssess(val,flaws){
       '</div>';
   }catch(e){ if(seq!==_aiDeepSeq) return; box.innerHTML=''; }
 }
-function renderRisk(res){
+function renderRisk(res,short){
   /* 历史对比：先读上次记录，再把本次写入 */
   let histBadge='';
   let hist=[];
@@ -1961,7 +1962,7 @@ function renderRisk(res){
      '<div class="gauge-wrap">'+
        gaugeSVG()+
        '<div class="tier">'+res.tier[0]+'</div>'+
-       '<p class="tier-sub">'+res.tier[1]+' · 命中隐患 '+res.flawCount+' 处'+histBadge+'</p>'+
+       '<p class="tier-sub">'+res.tier[1]+' · 命中隐患 '+res.flawCount+' 处'+histBadge+(short?'<span class="hist-badge">材料较短 · 结果偏宽松仅供参考</span>':'')+'</p>'+
        '<div class="share-row"><button class="btn btn-primary" id="genCard">生成分享卡片</button></div>'+
      '</div>'+
      '<div><div class="dim-list">'+rows+'</div>'+
@@ -2008,12 +2009,12 @@ function animateGauge(target,color){
 $('#btnC').addEventListener('click',()=>{
   const val=$('#taC').value.trim();
   const err=$('#errC');
-  if(val.length<15){ err.classList.add('show'); $('#taC').focus(); return; }
+  if(val.length<2){ err.classList.add('show'); $('#taC').focus(); return; }
   err.classList.remove('show');
   renderSkeleton($('#outC'),4);
   setTimeout(()=>{
     const res=computeRisk(val);
-    renderRisk(res);
+    renderRisk(res,val.length<50);
     aiDeepAssess(val,res.flaws);
   },800);
 });
