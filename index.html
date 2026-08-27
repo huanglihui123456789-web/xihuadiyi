@@ -745,13 +745,16 @@ $$('.demo-a').forEach(b=>b.addEventListener('click',()=>{
 }));
 
 /* ==================================================================
-   大模型引擎（DeepSeek-V4-Flash @ SiliconFlow，BYOK 直连）
+   大模型引擎（DeepSeek-V4-Flash @ SiliconFlow）
+   内置公共 Key 供所有访客直接使用；访客也可在设置面板换成自己的 Key 覆盖
 ================================================================== */
 const LLM={
   KEY_NAME:'zc_api_key', MODEL:'deepseek-ai/DeepSeek-V4-Flash',
+  KEY_DEFAULT:'sk-kpwnarxygztqdrwwwynjdfozycbpkyhuitcelhjaxqqlojdg',
   BASE:'https://api.siliconflow.cn/v1/chat/completions',
-  get key(){ try{return localStorage.getItem(this.KEY_NAME)||''}catch(e){return ''} },
-  enabled(){ return this.key.length>20 },
+  get key(){ try{return localStorage.getItem(this.KEY_NAME)||this.KEY_DEFAULT}catch(e){return this.KEY_DEFAULT} },
+  hasKey(){ return true },
+  enabled(){ return true },
   async chat(messages,maxTokens){
     const r=await fetch(this.BASE,{method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+this.key},
@@ -771,15 +774,15 @@ const LLM={
   }
 };
 function syncEngineUI(){
-  const on=LLM.enabled();
+  const on=LLM.hasKey();
   $('#llmBtn').classList.toggle('on',on);
-  $('#llmBtnTxt').textContent=on?'大模型在线':'本地引擎';
+  $('#llmBtnTxt').textContent='AI引擎·在线';
   $('#modeHintA').textContent=on?'大模型转写（DeepSeek-V4-Flash）· 文本将发送至硅基流动':'纯本地分析，不上传任何内容';
 }
 $('#llmBtn').addEventListener('click',e=>{
   e.stopPropagation();
   const p=$('#llmPanel'); p.classList.toggle('open');
-  if(p.classList.contains('open')){ $('#llmKeyInput').value=LLM.key; $('#llmStatus').textContent=LLM.enabled()?'当前状态：已配置，AI 转写与 AI 导师已启用':'当前状态：未配置，运行本地规则引擎'; }
+  if(p.classList.contains('open')){ const mine=localStorage.getItem(LLM.KEY_NAME)||''; $('#llmKeyInput').value=mine; $('#llmStatus').textContent=mine?'当前状态：你的专属 Key 已启用':'当前状态：内置公共 Key 已启用，AI 开箱即用（可粘贴自己的 Key 覆盖）'; }
 });
 document.addEventListener('click',e=>{
   const p=$('#llmPanel');
@@ -794,7 +797,7 @@ $('#llmSave').addEventListener('click',()=>{
 });
 $('#llmClear').addEventListener('click',()=>{
   localStorage.removeItem(LLM.KEY_NAME); $('#llmKeyInput').value='';
-  syncEngineUI(); $('#llmStatus').textContent='已清除，回落本地引擎';
+  syncEngineUI(); $('#llmStatus').textContent='已清除个人 Key，恢复使用内置公共 Key';
 });
 
 /* ---------- 功能A：LLM 转写 ---------- */
