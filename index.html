@@ -1,0 +1,1642 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>组会求生舱 · 把论文黑话变人话</title>
+<style>
+/* ============ 设计令牌 ============ */
+:root{
+  --bg:#161513;
+  --panel:#1d1b18;
+  --panel-2:#232019;
+  --line:rgba(236,231,222,.10);
+  --line-strong:rgba(236,231,222,.18);
+  --text:#ece7de;
+  --muted:#9a938a;
+  --faint:#6f6960;
+  --accent:#d9564f;
+  --accent-soft:rgba(217,86,79,.12);
+  --accent-line:rgba(217,86,79,.45);
+  --ok:#7aa874;
+  --radius:12px;
+  --serif:"Noto Serif SC","Source Han Serif SC","Songti SC",SimSun,serif;
+  --sans:"PingFang SC","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono","JetBrains Mono",Consolas,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:var(--sans);font-size:16px;line-height:1.7;
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:var(--accent);color:#fff}
+
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+
+/* ============ 导航 ============ */
+nav{
+  position:sticky;top:0;z-index:50;height:64px;
+  border-bottom:1px solid var(--line);
+  background:rgba(22,21,19,.86);backdrop-filter:blur(12px);
+}
+.nav-inner{max-width:1080px;margin:0 auto;padding:0 24px;height:64px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-family:var(--serif);font-size:18px;font-weight:700;letter-spacing:.06em;color:var(--text);text-decoration:none;display:flex;align-items:center;gap:10px}
+.brand i{width:9px;height:9px;background:var(--accent);display:inline-block;border-radius:2px}
+.nav-links{display:flex;gap:4px}
+.nav-links a{
+  color:var(--muted);text-decoration:none;font-size:14px;padding:7px 14px;border-radius:8px;transition:color .2s,background .2s;
+}
+.nav-links a:hover{color:var(--text);background:var(--accent-soft)}
+@media(max-width:640px){.nav-links a:nth-child(3){display:none}}
+
+/* ============ Hero ============ */
+.hero{padding:88px 0 72px;position:relative;overflow:hidden}
+.hero::after{
+  content:"";position:absolute;right:-120px;top:-80px;width:420px;height:420px;border-radius:50%;
+  background:radial-gradient(circle,var(--accent-soft),transparent 68%);pointer-events:none;
+}
+.hero h1{
+  font-family:var(--serif);font-weight:900;line-height:1.15;letter-spacing:.01em;
+  font-size:clamp(34px,5.2vw,58px);max-width:16em;
+}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.hero p.lead{margin-top:20px;color:var(--muted);font-size:17px;max-width:34em}
+.hero-cta{margin-top:36px;display:flex;gap:14px;flex-wrap:wrap}
+
+.btn{
+  display:inline-flex;align-items:center;gap:8px;border-radius:var(--radius);
+  padding:12px 26px;font-size:15px;font-family:var(--sans);cursor:pointer;text-decoration:none;
+  transition:transform .15s ease,background .2s,border-color .2s;user-select:none;
+}
+.btn:active{transform:translateY(1px) scale(.985)}
+.btn-primary{background:var(--accent);color:#fff;border:1px solid transparent;font-weight:600}
+.btn-primary:hover{background:#c24740}
+.btn-ghost{background:transparent;color:var(--text);border:1px solid var(--line-strong)}
+.btn-ghost:hover{border-color:var(--accent-line);color:var(--accent)}
+
+/* ============ 分区通用 ============ */
+section.fn{padding:76px 0;border-top:1px solid var(--line)}
+.fn-head{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;margin-bottom:8px}
+.fn-head h2{font-family:var(--serif);font-size:clamp(24px,3vw,32px);font-weight:800}
+.fn-head .fn-no{font-family:var(--mono);font-size:13px;color:var(--accent);letter-spacing:.15em}
+.fn-sub{color:var(--muted);font-size:15px;margin-bottom:28px;max-width:44em}
+
+textarea,input[type=text]{
+  width:100%;background:var(--panel);color:var(--text);
+  border:1px solid var(--line-strong);border-radius:var(--radius);
+  padding:16px;font-family:var(--sans);font-size:15px;line-height:1.75;resize:vertical;
+  transition:border-color .2s;
+}
+textarea:focus,input:focus{outline:none;border-color:var(--accent-line)}
+textarea::placeholder{color:var(--faint)}
+
+.row-actions{display:flex;gap:12px;align-items:center;margin-top:14px;flex-wrap:wrap}
+.hint{font-size:13px;color:var(--faint)}
+
+.field-error{margin-top:10px;font-size:13px;color:var(--accent);display:none}
+.field-error.show{display:block}
+
+/* ============ 稿纸结果面板 ============ */
+.paper{
+  position:relative;margin-top:26px;border:1px solid var(--line-strong);border-radius:var(--radius);
+  background:
+    repeating-linear-gradient(to bottom,transparent 0 33px,rgba(236,231,222,.05) 33px 34px),
+    var(--panel);
+  overflow:hidden;
+}
+.paper::before{
+  content:"";position:absolute;left:44px;top:0;bottom:0;width:1px;
+  background:rgba(217,86,79,.28);
+}
+.paper-inner{padding:26px 26px 26px 66px}
+@media(max-width:640px){.paper::before{left:26px}.paper-inner{padding-left:46px}}
+
+.block{margin-bottom:26px}
+.block:last-child{margin-bottom:0}
+.block-label{
+  font-family:var(--mono);font-size:12px;color:var(--accent);
+  letter-spacing:.12em;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;
+}
+.copy-btn{
+  font-family:var(--mono);font-size:11px;letter-spacing:.08em;
+  color:var(--muted);background:transparent;border:1px solid var(--line-strong);
+  padding:3px 10px;border-radius:6px;cursor:pointer;transition:.2s;
+}
+.copy-btn:hover{color:var(--accent);border-color:var(--accent-line)}
+.copy-btn.done{color:var(--ok);border-color:rgba(122,168,116,.5)}
+
+.script-line{font-size:16px;margin-bottom:10px}
+.beat{
+  font-family:var(--mono);font-size:12px;color:var(--accent);
+  border:1px solid var(--accent-line);background:var(--accent-soft);
+  border-radius:999px;padding:1px 8px;margin:0 4px;white-space:nowrap;
+  display:inline-block;transform:translateY(-1px);
+}
+body.plain .beat{display:none}
+
+.ppt-tip{
+  margin-top:6px;padding:12px 16px;border-left:3px solid var(--accent);
+  background:var(--accent-soft);border-radius:0 8px 8px 0;font-size:14px;color:var(--text);
+}
+.kw{color:var(--accent);font-weight:600}
+
+/* 骨架态 */
+.skeleton .skl{
+  height:16px;border-radius:6px;margin-bottom:14px;
+  background:linear-gradient(90deg,rgba(236,231,222,.05) 25%,rgba(236,231,222,.12) 45%,rgba(236,231,222,.05) 65%);
+  background-size:280% 100%;animation:shimmer 1.1s infinite linear;
+}
+@keyframes shimmer{to{background-position:-180% 0}}
+@media (prefers-reduced-motion:reduce){.skeleton .skl{animation:none}}
+.scan-note{font-family:var(--mono);font-size:12px;color:var(--faint);letter-spacing:.1em}
+
+/* ============ 功能B：人设与问题卡 ============ */
+.personas{display:flex;gap:14px;margin-top:20px;flex-wrap:wrap}
+.persona{
+  flex:1 1 200px;border:1px solid var(--line-strong);border-radius:var(--radius);
+  background:var(--panel);padding:18px 20px;cursor:pointer;transition:.2s;min-width:200px;
+}
+.persona:nth-child(1){flex-grow:1.1}.persona:nth-child(2){flex-grow:1}.persona:nth-child(3){flex-grow:1.25}
+.persona h4{font-family:var(--serif);font-size:17px;margin-bottom:6px}
+.persona p{font-size:13px;color:var(--muted);line-height:1.6}
+.persona .quote{margin-top:10px;font-size:13px;color:var(--faint);font-style:normal;font-family:var(--serif)}
+.persona:hover{border-color:var(--accent-line)}
+.persona.on{border-color:var(--accent);background:linear-gradient(0deg,var(--accent-soft),var(--accent-soft)),var(--panel)}
+.persona.on h4{color:var(--accent)}
+
+.qcard{
+  margin-top:18px;border:1px solid var(--line-strong);border-radius:var(--radius);
+  background:var(--panel);overflow:hidden;
+  opacity:0;transform:translateY(16px);
+  animation:rise .55s cubic-bezier(.16,1,.3,1) forwards;
+  animation-delay:calc(var(--i,0)*90ms);
+}
+@keyframes rise{to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.qcard{opacity:1;transform:none;animation:none}}
+
+.qcard .q-top{padding:18px 22px 4px;display:flex;gap:12px;align-items:flex-start}
+.q-num{font-family:var(--mono);color:var(--accent);font-size:14px;padding-top:3px}
+.q-voice{font-family:var(--serif);font-size:16.5px;line-height:1.7}
+.q-voice::before{content:"「";color:var(--accent)}
+.q-voice::after{content:"」";color:var(--accent)}
+.q-body{padding:12px 22px 20px 52px}
+@media(max-width:640px){.q-body{padding-left:30px}}
+.tag-red{
+  display:inline-block;font-size:12px;font-family:var(--mono);letter-spacing:.06em;
+  color:#fff;background:var(--accent);border-radius:6px;padding:2px 9px;margin-bottom:8px;
+}
+.q-essence{font-size:14px;color:var(--muted);margin-bottom:14px}
+.defense{border-top:1px dashed var(--line-strong);padding-top:14px}
+.defense ol{list-style:none;counter-reset:step}
+.defense li{counter-increment:step;position:relative;padding-left:30px;margin-bottom:8px;font-size:14.5px;color:var(--text)}
+.defense li::before{
+  content:counter(step,cjk-ideographic);
+  position:absolute;left:0;top:2px;width:20px;height:20px;border-radius:50%;
+  border:1px solid var(--accent-line);color:var(--accent);font-size:11px;
+  display:flex;align-items:center;justify-content:center;font-family:var(--mono);
+}
+.followup-toggle{
+  margin-top:10px;background:none;border:none;cursor:pointer;
+  font-size:13px;color:var(--faint);text-decoration:underline dotted;padding:0;
+}
+.followup-toggle:hover{color:var(--accent)}
+.followup{display:none;margin-top:14px;padding:14px 16px;background:var(--panel-2);border-radius:8px}
+.followup.show{display:block}
+.followup .fq{font-family:var(--serif);font-size:14.5px;color:var(--accent);margin-bottom:8px}
+.followup .fa{font-size:14px;color:var(--muted)}
+
+/* ============ 功能C：生存指数 ============ */
+.risk-grid{display:grid;grid-template-columns:320px 1fr;gap:36px;margin-top:26px;align-items:start}
+@media(max-width:860px){.risk-grid{grid-template-columns:1fr}}
+.gauge-wrap{text-align:center}
+.gauge{width:260px;height:260px;margin:0 auto;position:relative}
+.gauge svg{transform:rotate(-90deg)}
+.gauge-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.gauge-pct{font-family:var(--mono);font-size:52px;font-weight:700;letter-spacing:-.02em}
+.gauge-pct small{font-size:22px;color:var(--muted)}
+.tier{font-family:var(--serif);font-size:20px;margin-top:10px;color:var(--accent)}
+.tier-sub{font-size:13px;color:var(--faint);margin-top:4px}
+.share-row{margin-top:22px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+
+.dim-list{border-top:1px solid var(--line)}
+.dim-row{border-bottom:1px solid var(--line)}
+.dim-main{
+  display:flex;align-items:center;gap:16px;padding:15px 4px;cursor:pointer;
+}
+.dim-name{width:96px;flex-shrink:0;font-size:15px}
+.dim-bar{flex:1;height:5px;border-radius:99px;background:rgba(236,231,222,.08);overflow:hidden}
+.dim-fill{height:100%;border-radius:99px;background:var(--accent);width:0;transition:width .9s cubic-bezier(.16,1,.3,1)}
+@media (prefers-reduced-motion:reduce){.dim-fill{transition:none}}
+.dim-score{font-family:var(--mono);font-size:13px;color:var(--muted);width:48px;text-align:right}
+.dim-detail{display:none;padding:0 4px 14px 112px;font-size:13.5px;color:var(--muted)}
+.dim-detail.show{display:block}
+.dim-detail li{list-style:square;margin-left:16px;margin-bottom:4px}
+
+#shareCanvasWrap{display:none;margin-top:26px;text-align:center}
+#shareCanvasWrap img{max-width:340px;border:1px solid var(--line-strong);border-radius:var(--radius)}
+
+/* ============ 页脚 ============ */
+footer{border-top:1px solid var(--line);padding:36px 0 48px;color:var(--faint);font-size:13px}
+footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+
+/* ============ 功能B：导师聊天室 ============ */
+.chat-shell{
+  margin-top:26px;border:1px solid var(--line-strong);border-radius:var(--radius);
+  background:
+    repeating-linear-gradient(to bottom,transparent 0 33px,rgba(236,231,222,.04) 33px 34px),
+    var(--panel);
+  overflow:hidden;
+}
+.chat-progress{
+  display:flex;align-items:center;gap:14px;padding:12px 18px;
+  border-bottom:1px solid var(--line);background:rgba(217,86,79,.05);
+}
+.chat-progress .cp-label{font-family:var(--mono);font-size:12px;letter-spacing:.1em;color:var(--accent);white-space:nowrap}
+.cp-track{flex:1;height:5px;border-radius:99px;background:rgba(236,231,222,.08);overflow:hidden}
+.cp-fill{height:100%;border-radius:99px;background:var(--accent);width:0;transition:width .5s cubic-bezier(.16,1,.3,1)}
+@media (prefers-reduced-motion:reduce){.cp-fill{transition:none}}
+
+.chat-stream{padding:22px 20px;display:flex;flex-direction:column;gap:14px;min-height:280px;max-height:520px;overflow-y:auto}
+.bub{max-width:82%;padding:13px 17px;border-radius:12px;font-size:15px;line-height:1.75;position:relative}
+.bub-tutor{
+  align-self:flex-start;border-left:3px solid var(--accent);
+  background:var(--panel-2);color:var(--text);
+  border-top-left-radius:4px;font-family:var(--serif);
+}
+.bub-me{align-self:flex-end;background:rgba(236,231,222,.09);border-top-right-radius:4px;white-space:pre-wrap}
+.bub-meta{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.08em;margin-bottom:5px}
+.bub-tutor .bub-meta{color:var(--accent)}
+.bub-tag{
+  display:inline-block;font-size:11px;font-family:var(--mono);
+  border:1px solid var(--accent-line);color:var(--accent);border-radius:999px;
+  padding:0 8px;margin-top:8px;margin-right:6px;
+}
+.bub.typing{display:flex;gap:5px;padding:16px 20px;width:auto}
+.typing i{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:bnc 1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes bnc{0%,60%,100%{transform:none;opacity:.5}30%{transform:translateY(-5px);opacity:1}}
+#shareCanvasWrap img{height:min(560px,74vh);width:auto;border:1px solid var(--line-strong);border-radius:var(--radius)}
+@media (prefers-reduced-motion:reduce){.typing i{animation:none}}
+
+.chat-input{display:flex;gap:10px;padding:14px 18px;border-top:1px solid var(--line)}
+.chat-input textarea{flex:1;min-height:52px;max-height:120px;rows:2;font-size:14.5px}
+.pocket-btn{
+  align-self:flex-end;white-space:nowrap;font-size:13px;padding:10px 16px;
+  color:var(--accent);background:transparent;border:1px dashed var(--accent-line);
+  border-radius:var(--radius);cursor:pointer;transition:.2s;font-family:var(--sans);
+}
+.pocket-btn:hover{background:var(--accent-soft)}
+
+.report-panel{margin-top:18px;border:1px solid var(--accent-line);border-radius:var(--radius);background:var(--panel);padding:24px 26px}
+.report-panel h3{font-family:var(--serif);font-size:21px;margin-bottom:4px}
+.rp-grid{display:flex;gap:26px;flex-wrap:wrap;margin:16px 0}
+.rp-item{text-align:center}
+.rp-num{font-family:var(--mono);font-size:34px;font-weight:700;color:var(--text)}
+.rp-cap{font-size:12px;color:var(--faint);margin-top:2px}
+.rp-verdict{border-left:3px solid var(--accent);background:var(--accent-soft);padding:12px 16px;border-radius:0 8px 8px 0;font-size:14.5px;margin:10px 0 18px}
+
+/* ============ 引擎设置 ============ */
+.engine-badge{
+  display:flex;align-items:center;gap:7px;margin-left:18px;
+  background:transparent;border:1px solid var(--line-strong);border-radius:999px;
+  color:var(--muted);font-size:12px;font-family:var(--mono);padding:5px 12px;cursor:pointer;
+}
+.engine-badge .dot{width:7px;height:7px;border-radius:50%;background:#6b6b6b}
+.engine-badge.on{color:var(--accent);border-color:var(--accent-line)}
+.engine-badge.on .dot{background:var(--accent);box-shadow:none}
+.llm-panel{
+  display:none;position:absolute;right:0;top:calc(100% + 10px);z-index:60;
+  width:min(420px,92vw);background:var(--panel-2);border:1px solid var(--line-strong);
+  border-radius:var(--radius);padding:18px 20px;box-shadow:0 14px 40px rgba(0,0,0,.45);
+}
+.llm-panel.open{display:block}
+.lp-title{font-family:var(--mono);font-size:13px;color:var(--text);margin-bottom:6px}
+.lp-sub{font-size:12.5px;color:var(--faint);line-height:1.6;margin-bottom:12px}
+.lp-row{display:flex;gap:8px}
+.lp-row input{flex:1}
+.lp-status{font-size:12px;color:var(--muted);margin-top:8px;min-height:1em}
+
+/* toast */
+.toast{
+  position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);
+  background:var(--panel-2);border:1px solid var(--accent-line);color:var(--text);
+  padding:10px 22px;border-radius:999px;font-size:14px;opacity:0;transition:.35s cubic-bezier(.16,1,.3,1);
+  z-index:99;pointer-events:none;
+}
+.toast.show{transform:translateX(-50%);opacity:1}
+.clip-wrap{display:flex;flex-direction:column;gap:8px}
+.clip-out{white-space:pre-wrap;background:rgba(236,231,222,.04);border:1px dashed var(--line-strong);border-radius:var(--radius);padding:14px 16px;font-size:14.5px;line-height:1.8;color:var(--text);margin:0}
+/* ---------- 移动端适配（置于末尾保证覆盖） ---------- */
+@media(max-width:640px){
+  .wrap{padding:0 16px}
+  .hero{padding:64px 0 52px}
+  .hero h1{font-size:34px}
+  .hero p.lead{font-size:15px}
+  .personas{display:grid;grid-template-columns:1fr;gap:10px}
+  .fn-head h2{font-size:22px}
+  .row-actions{flex-wrap:wrap}
+  .chat-input{padding:12px;gap:8px;flex-wrap:wrap}
+  .chat-input textarea{width:100%;flex:none}
+  .chat-input .pocket-btn,.chat-input .giveup-btn,.chat-input .send-btn{flex:1;padding:10px 8px}
+  .script-line{font-size:14.5px}
+  .tag-beat{white-space:normal}
+  .lp-row{flex-wrap:wrap}
+  .nav-links{gap:10px}
+  footer .wrap{justify-content:center;text-align:center}
+  #shareCanvasWrap img{height:auto;width:min(82vw,320px)}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a class="brand" href="#top"><i></i>组会求生舱</a>
+    <div class="nav-links">
+      <a href="#f-a">口语化转写</a>
+      <a href="#f-b">夺命连环问</a>
+      <a href="#f-c">生存指数</a>
+    </div>
+    <button class="engine-badge" id="llmBtn" title="大模型引擎设置"><i class="dot"></i><span id="llmBtnTxt">本地引擎</span></button>
+  </div>
+  <div class="llm-panel" id="llmPanel">
+    <p class="lp-title">大模型引擎 · DeepSeek-V4-Flash（硅基流动）</p>
+    <p class="lp-sub">Key 只保存在你浏览器 localStorage，页面不内置、不上传。未配置或调用失败时自动回落本地规则引擎。</p>
+    <div class="lp-row">
+      <input type="password" id="llmKeyInput" placeholder="粘贴 SiliconFlow API Key（sk-…）" autocomplete="off">
+      <button class="btn btn-primary" id="llmSave">保存</button>
+      <button class="btn btn-ghost" id="llmClear">清除</button>
+    </div>
+    <p class="lp-status" id="llmStatus"></p>
+  </div>
+</nav>
+
+<!-- ============ HERO ============ -->
+<header class="hero" id="top">
+  <div class="wrap">
+    <h1>别再对着公式<br><em>念经</em>了。</h1>
+    <p class="lead">粘贴论文正文或实验结论，三十秒拿到口语版逐字稿、导师夺命连环问预演，以及你本次组会的被怼风险指数。</p>
+    <div class="hero-cta">
+      <a class="btn btn-primary" href="#f-a">开始转写</a>
+      <a class="btn btn-ghost" href="#f-b">模拟追问</a>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<!-- ============ 功能 A ============ -->
+<section class="fn" id="f-a">
+  <div class="wrap">
+    <div class="fn-head"><span class="fn-no">功能 A</span><h2>学术黑话 → 演讲口语</h2></div>
+    <p class="fn-sub">粘贴一段论文正文或实验结论。引擎抽取核心结论、配上现实比喻、拆解长难句，并生成可直接照读的逐字稿与节奏提示。</p>
+
+    <textarea id="taA" rows="7" placeholder="例：为了验证所提方法的有效性，我们在两个公开基准数据集上进行了大量实验，结果表明本方法相较于现有最优基线模型在准确率上提升了3.8个百分点（p&lt;0.01），验证了其较强的泛化能力与鲁棒性……"></textarea>
+    <div class="row-actions">
+      <button class="btn btn-primary" id="btnA">生成口语稿</button>
+      <button class="btn btn-ghost demo-a">塞入示例文本</button>
+      <span class="hint" id="modeHintA">纯本地分析，不上传任何内容</span>
+    </div>
+    <p class="field-error" id="errA">先粘贴一段论文内容再点击生成。</p>
+
+    <div id="outA"></div>
+  </div>
+</section>
+
+<!-- ============ 功能 B ============ -->
+<section class="fn" id="f-b">
+  <div class="wrap">
+    <div class="fn-head"><span class="fn-no">功能 B</span><h2>导师夺命连环问模拟器</h2></div>
+    <p class="fn-sub">选一位导师人设，贴上你的 PPT 大纲或研究摘要。导师会像真实组会一样无限追问——回答够硬才放行换题；预设漏洞问完后导师还会自由深挖新角度。撑不住随时点「举手投降」拿面谈报告，或被导师问到无可再问自动收卷。</p>
+
+    <div id="setupB">
+    <div class="personas" id="personas">
+      <div class="persona on" data-p="detail">
+        <h4>细节狂魔型</h4>
+        <p>专挑样本量、误差棒、参数选定依据发难。</p>
+        <p class="quote">“我就问一个细节……这个误差棒是怎么回事？”</p>
+      </div>
+      <div class="persona" data-p="macro">
+        <h4>宏观战略型</h4>
+        <p>专问研究意义、相比前人的增量、能否落地。</p>
+        <p class="quote">“你这个工作，到底解决了什么真问题？”</p>
+      </div>
+      <div class="persona" data-p="aggressive">
+        <h4>激进压制型</h4>
+        <p>步步紧逼结论可靠性，要求当场自证。</p>
+        <p class="quote">“如果我把你的数据推翻了，你怎么答辩？”</p>
+      </div>
+      <div class="persona" data-p="dream">
+        <h4>梦中情导型</h4>
+        <p>先真诚肯定亮点，再温和地把你引到漏洞前，笑着补刀。</p>
+        <p class="quote">“这部分做得不错。不过如果我是评审，我会问……”</p>
+      </div>
+      <div class="persona" data-p="devil">
+        <h4>抬杠高手型</h4>
+        <p>你说什么他都反对，专攻反例与极端情况，逼你自证完备。</p>
+        <p class="quote">“不一定吧？你考虑过 XX 的情况吗？”</p>
+      </div>
+    </div>
+
+    <div style="margin-top:20px">
+      <textarea id="taB" rows="7" placeholder="粘贴 PPT 大纲或研究摘要。例：本研究提出一种基于注意力机制的轻量化缺陷检测模型，在工业质检数据集上取得优异表现，证明该方法能显著优于传统方案……"></textarea>
+      <div class="row-actions">
+        <button class="btn btn-primary" id="btnB">进入导师聊天室</button>
+        <button class="btn btn-ghost demo-b">塞入示例大纲</button>
+        <span class="hint">当前人设：<b id="personaName" style="color:var(--accent)">细节狂魔型</b></span>
+      </div>
+      <p class="field-error" id="errB">先选择人设并粘贴汇报材料。</p>
+    </div>
+    </div>
+
+    <div id="outB"></div>
+  </div>
+</section>
+
+<!-- ============ 功能 C ============ -->
+<section class="fn" id="f-c">
+  <div class="wrap">
+    <div class="fn-head"><span class="fn-no">功能 C</span><h2>组会生存指数评估</h2></div>
+    <p class="fn-sub">综合本次汇报材料的漏洞密度，估算你走下讲台时的存活概率。支持一键生成分享卡片。</p>
+
+    <textarea id="taC" rows="6" placeholder="粘贴完整汇报材料或研究摘要，建议内容越接近真实讲稿，评估越准……"></textarea>
+    <div class="row-actions">
+      <button class="btn btn-primary" id="btnC">评估生存率</button>
+      <button class="btn btn-ghost demo-c">塞入示例材料</button>
+      <span class="hint">评分基于 8 类常见致命项启发式检测</span>
+    </div>
+    <p class="field-error" id="errC">请先粘贴汇报材料。</p>
+
+    <div id="outC"></div>
+
+    <div id="shareCanvasWrap">
+      <img id="shareImg" alt="组会生存指数分享卡片">
+      <div style="margin-top:12px">
+        <button class="btn btn-primary" id="dlCard">下载卡片 PNG</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>组会求生舱</span>
+    <span>仅供学术互助与自嘲使用，话术请按真实情况修改后再用</span>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* ================================================================
+   组会求生舱 · 本地规则引擎
+   分区：工具函数 / 词库 / 功能A / 漏洞检测 / 功能B / 功能C / 卡片导出 / 事件绑定
+================================================================ */
+
+/* ---------- 工具 ---------- */
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function hash(str){ let h=7; for(const c of str){ h=(h*131+c.charCodeAt(0))|0 } return Math.abs(h); }
+function pick(arr,seed){ return arr[seed % arr.length]; }
+function clamp(n,a,b){ return Math.max(a,Math.min(b,n)); }
+
+let persona = 'detail';
+const personaNames = { detail:'细节狂魔型', macro:'宏观战略型', aggressive:'激进压制型', dream:'梦中情导型', devil:'抬杠高手型' };
+
+function showToast(msg){
+  const t=$('#toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),1600);
+}
+function copyText(text, btn){
+  const done=()=>{ if(btn){ const o=btn.textContent; btn.textContent='已复制'; btn.classList.add('done'); setTimeout(()=>{btn.textContent=o;btn.classList.remove('done')},1400);} };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done).catch(()=>fallback());
+  } else fallback();
+  function fallback(){
+    const ta=document.createElement('textarea'); ta.value=text;
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); done(); }catch(e){ showToast('复制失败，请手动选中'); }
+    document.body.removeChild(ta);
+  }
+}
+
+/* ---------- 术语口语替换表 ---------- */
+const termRewrites = [
+  [/(?:p|P)\s*[<＜]\s*0?\.0\d+/g, 'p 值小于 0.05，排除运气因素'],
+  [/统计(?:学)?显著/g, '差异明显到不能甩锅给巧合'],
+  [/具有统计学意义/g, '不是碰巧出现的结果'],
+  [/泛化(?:能力|性能)/g, '换一批没见过的数据还灵不灵'],
+  [/鲁棒性/g, '抗干扰能力'],
+  [/消融实验|消融研究/g, '把模型零件一个个拆下来，看每个零件的功劳'],
+  [/(?:交叉)?验证集/g, '留出来当期末考的那部分数据'],
+  [/交叉验证/g, '轮流拿不同份数据考试，最后取平均分'],
+  [/超参数/g, '训练前就定好的开关'],
+  [/迁移学习/g, '把以前学会的本事搬到新任务上'],
+  [/置信区间/g, '真实值大概率落在这条范围里'],
+  [/基线模型|基准模型/g, '对照组里的老方法'],
+  [/回归分析/g, '把各个因素的贡献拆开来看'],
+  [/正相关/g, '两个量同涨同跌'],
+  [/负相关/g, '一个涨另一个就跌'],
+  [/收敛/g, '误差稳住不再往下走了'],
+  [/特征提取/g, '从原始信息里挑出真正有用的线索'],
+  [/端到端/g, '一头进原料一头出成品'],
+  [/指标(?:体系)?/g, '衡量好坏的尺子'],
+  [/多尺度/g, '远近景都看一遍'],
+  [/注意力机制/g, '让模型学会挑重点看'],
+];
+
+/* ---------- 比喻库（六领域） ---------- */
+const metaphorBank = {
+  ml:{ name:'机器学习', keys:['模型','训练','神经网络','准确率','损失','特征','过拟合','分类','卷积','参数','深度学习'],
+    metaphors:[
+      '本质上就像教小孩认猫：一开始连尾巴都认不出来，看得多了才慢慢抓住关键特征',
+      '相当于从一堆杂音里调收音机频道：参数就是那个旋钮，我们反复微调直到声音最清楚' ] },
+  med:{ name:'医学实验', keys:['临床','患者','疗效','给药','剂量','病理','症状','康复','用药'],
+    metaphors:[
+      '打个比方，这就像新型感冒药的试吃试验：吃药组和安慰剂组各吃一个月，再看谁恢复得快',
+      '可以理解为两种治疗方案的正面比武，我们把差异摆到台面上算总账' ] },
+  chem:{ name:'材料化学', keys:['材料','合成','催化','反应','薄膜','晶格','掺杂','制备','溶剂','温度梯度'],
+    metaphors:[
+      '类似做菜时调整火候和下料顺序，我们试了几种配比才找到风味最好的组合',
+      '本质上是搭积木：分子怎么码放，决定了这栋楼结不结实' ] },
+  econ:{ name:'经济金融', keys:['市场','经济','政策','回归','收益','价格','风险','消费','通胀','供给'],
+    metaphors:[
+      '就像观察菜价：下雨天涨价未必真是雨的原因，我们用回归把真实关系剥出来',
+      '相当于给整个市场做体检，几项指标联合起来才说明健康状况' ] },
+  social:{ name:'社科调研', keys:['问卷','调查','受访者','心理','行为','社会','教育','效应','访谈','被试'],
+    metaphors:[
+      '这好比问一群人喜不喜欢香菜：光举手不行，还得确认举手的人没有被别人带节奏',
+      '类似班主任推断谁上课走神：单看一次不行，要连续记录很多天的行为模式' ] },
+  generic:{ name:'通用', keys:[],
+    metaphors:[
+      '打个比方，这就是先把一锅粥里的大块捞出来，再仔细尝每一勺的味道',
+      '本质上像修自行车：先判断问题出在链条还是轮胎，再对症拧螺丝' ] }
+};
+
+/* 过渡词池与节奏标签池 */
+const transitions = ['大家注意看这里，','这里我多解释一句，','我们最初预期是这样的，但实际要复杂一些。先说结论：','换句话说，'];
+const beatPool = ['停顿 1s','加重语气','放慢语速','停顿 2s 环视全场'];
+
+/* ==================================================================
+   功能 A：黑话 -> 口语
+================================================================== */
+function stripFormulas(raw){
+  return raw
+    .replace(/\$\$?[^$]+\$\$?/g,'这个式子')
+    .replace(/\\\((.+?)\\\)/g,'这个式子')
+    .replace(/\\begin\{(equation|array|align)\*?\}[\s\S]*?\\end\{\1\*?\}/g,'这一整段推导')
+    .replace(/[A-Za-z]_\{?[a-zA-Z0-9]+\}?/g,'对应符号');
+}
+function splitSentences(t){
+  return t.replace(/\s+/g,' ').match(/[^。！？!?；;]+[。！？!?；;]?/g) || [];
+}
+function detectDomain(t){
+  let best='generic', bestHits=0;
+  for(const key of Object.keys(metaphorBank)){
+    const bank=metaphorBank[key];
+    const hits=bank.keys.reduce((n,k)=>n+(t.includes(k)?1:0),0);
+    if(hits>bestHits){ best=key; bestHits=hits; }
+  }
+  return best;
+}
+function shortenClause(s,maxLen){
+  s=s.replace(/^[为了通过基于针对]+[^，,]{2,18}[，,]/,'').trim();
+  if(s.length<=maxLen) return s.replace(/[。；;,，]$/,'');
+  const parts=s.split(/[，,；;]/).filter(p=>p.trim());
+  let out='';
+  for(const p of parts){ if((out+p).length>maxLen) break; out+=p+'，'; }
+  out=out.replace(/[，,]$/,'');
+  if(!out) out=pick(parts,hash(s)).slice(0,maxLen);
+  return out;
+}
+function applyRewrites(s){
+  for(const [re,rw] of termRewrites){ s=s.replace(re,rw); }
+  return s;
+}
+function firstCoreHook(sents){
+  // 优先找含结果词的句子，其次取首句
+  const kw=['提升','下降','表明','发现','结果表明','优于','显著','达到','验证','揭示'];
+  let core=null, score=-1;
+  for(const s of sents){
+    let sc=0; for(const k of kw){ if(s.includes(k)) sc+=2; }
+    sc+=Math.max(0,30-s.length)/15;
+    if(sc>score){ score=sc; core=s; }
+  }
+  return core||sents[0]||'';
+}
+function beatTag(seed,label){
+  return '<span class="beat">['+label+']</span>';
+}
+function genSpeech(rawInput){
+  const raw=rawInput.trim();
+  const clean=stripFormulas(raw);
+  const sents=splitSentences(clean).filter(s=>s.length>1);
+  if(!sents.length) return null;
+
+  const seed=hash(raw);
+  const dom=detectDomain(clean);
+  const metaBank=metaphorBank[dom];
+  const metaphor=pick(metaBank.metaphors,seed);
+
+  // 领域主语词
+  let subject='';
+  for(const k of metaBank.keys){ if(clean.includes(k)){ subject=k; break; } }
+  if(!subject) subject=shortenClause(firstCoreHook(sents),12);
+
+  const metrics=clean.match(/\d+(?:\.\d+)?\s*(?:[%％]|[个mMkK]?[次dD]|个百分点)/g)||[];
+  const metricBest=metrics.length
+    ? metrics.sort((a,b)=>parseFloat(b)-parseFloat(a))[0].trim()
+    : '';
+
+  const hookRaw=firstCoreHook(sents);
+  const hookShort=shortenClause(hookRaw,34);
+  const hardest=sents.reduce((a,b)=>b.length>a.length?b:a,'');
+
+  /* 抓人句 */
+  const hookHtml =
+    beatTag(seed,'停顿 1s') +
+    '一句话讲完：我们的核心就是'+esc(hookShort)+'。' +
+    '<br>' + esc(metaphor)+'。';
+
+  /* 三句逐字稿 */
+  const oralMain=esc(applyRewrites(shortenClause(hardest,56)));
+  const tr1=pick(transitions,seed>>2);
+  const tr2=pick(transitions.slice(1).concat(['接下来是重点，']),seed>>4);
+  const hasVisual=/图|曲线|趋势|表格|对比|折线/.test(clean);
+  const script=[
+    beatTag(seed+1,'放慢语速')+tr1+oralMain+'。',
+    beatTag(seed+2,hasVisual?'手指 PPT 曲线':pick(beatPool,seed>>3))+'打比方的话，'+esc(metaphor)+'，这就是我们在做的事。',
+    beatTag(seed+3,'加重语气')+(metricBest
+      ? tr2+'如果全场只记一个数，请记住：<span class="kw">'+esc(metricBest)+'</span>。其余细节不用抄，会后问我。'
+      : tr2+'这一页大家只需要记住结论方向，具体数值我标注在页脚了。')
+  ];
+
+  /* 贴PPT建议 */
+  const maxLen=Math.max(...sents.map(s=>s.length));
+  const pptTip = maxLen>45 || metrics.length
+    ? '原句最长 <b>'+maxLen+'</b> 字，直接上墙就是念经现场。建议页面只保留一行：「'+(metricBest?'关键结果 '+esc(metricBest):esc(shortenClause(hookShort,16)))+'」，其余全部口头带过。'
+    : '这段文字长度尚可，但建议把结论句加粗放大，并把'+esc(subject)+'相关的限定条件挪到备注区防追问。';
+
+  return {
+    domainName:metaBank.name,
+    hookHtml, script,
+    hookPlain:'【一句话抓人】'+hookShort,
+    pptTip,
+    plainText:hookShort+'\n\n【口头逐字稿】\n'+script.map(s=>s.replace(/<[^>]+>/g,'')).join('\n')+'\n\n【PPT建议】'+pptTip.replace(/<[^>]+>/g,'')
+  };
+}
+function renderSkeleton(el,lines){
+  el.innerHTML='<div class="paper skeleton"><div class="paper-inner">'+
+    '<p class="scan-note">引擎扫描中…</p>'+
+    Array.from({length:lines},()=>'<div class="skl" style="width:'+(62+Math.random()*34)+'%"></div>').join('')+
+    '</div></div>';
+}
+$('#btnA').addEventListener('click',async()=>{
+  const val=$('#taA').value.trim();
+  const err=$('#errA');
+  if(val.length<10){ err.classList.add('show'); $('#taA').focus(); return; }
+  err.classList.remove('show');
+  const out=$('#outA');
+  renderSkeleton(out,5);
+  if(LLM.enabled()){
+    let r=null;
+    try{ r=await llmGenSpeech(val); }catch(e){ showToast('AI 调用失败，已回落本地引擎'); }
+    if(!r){ out.innerHTML=''; return; }
+    out.innerHTML=
+      '<div class="paper"><div class="paper-inner">'+
+      '<p class="scan-note" style="margin-bottom:18px">识别领域：'+esc(r.domainName)+'</p>'+
+      '<div class="block"><div class="block-label"><span>一句话抓人</span><button class="copy-btn" data-copy="'+encodeURIComponent(r.hookPlain)+'">复制</button></div><div>'+r.hookHtml+'</div></div>'+
+      '<div class="block"><div class="block-label"><span>口头逐字稿 ×3（含节奏提示）</span><button class="copy-btn" data-copy-full>复制全稿</button></div>'+
+      r.script.map((s,i)=>'<p class="script-line">'+s+'</p>').join('')+
+      '</div>'+
+      '<div class="block"><div class="block-label"><span>贴 PPT 建议</span></div><div class="ppt-tip">'+r.pptTip+'</div></div>'+
+      clipBlockHTML()+
+      '</div></div>';
+    bindCopyBtns(out,r.plainText);
+    _lastA={hookPlain:r.hookPlain,plainText:r.plainText,scriptPlain:Array.isArray(r.script)?r.script.join('\n'):r.plainText};
+    return;
+  }
+  setTimeout(()=>{
+    const r=genSpeech(val);
+    if(!r){ out.innerHTML=''; showToast('文本太短，换个长一点的段落'); return; }
+    out.innerHTML=
+      '<div class="paper"><div class="paper-inner">'+
+      '<p class="scan-note" style="margin-bottom:18px">识别领域：'+esc(r.domainName)+'</p>'+
+      '<div class="block"><div class="block-label"><span>一句话抓人</span><button class="copy-btn" data-copy="'+encodeURIComponent(r.hookPlain)+'">复制</button></div><div>'+r.hookHtml+'</div></div>'+
+      '<div class="block"><div class="block-label"><span>口头逐字稿 ×3（含节奏提示）</span><button class="copy-btn" data-copy-full>复制全稿</button></div>'+
+      r.script.map((s,i)=>'<p class="script-line">'+s+'</p>').join('')+
+      '</div>'+
+      '<div class="block"><div class="block-label"><span>贴 PPT 建议</span></div><div class="ppt-tip">'+r.pptTip+'</div></div>'+
+      clipBlockHTML()+
+      '</div></div>';
+    bindCopyBtns(out,r.plainText);
+    _lastA={hookPlain:r.hookPlain,plainText:r.plainText,scriptPlain:Array.isArray(r.script)?r.script.join('\n'):r.plainText};
+  },750);
+});
+$$('.demo-a').forEach(b=>b.addEventListener('click',()=>{
+  $('#taA').value='为了系统验证本文所提方法的有效性，我们构建了一个包含12,847个样本的大规模评测集合，并在三个公开基准上进行了充分对比实验。实验结果表明，本文方法的准确率达到91.2%，较现有最优基线模型提升了3.8个百分点（p<0.01），同时推理延迟降低了约27%。消融实验进一步证实了各模块的贡献，上述结果均在多次随机种子下保持稳定，说明该方法具有较强的泛化能力与鲁棒性。';
+}));
+
+/* ==================================================================
+   大模型引擎（DeepSeek-V4-Flash @ SiliconFlow，BYOK 直连）
+================================================================== */
+const LLM={
+  KEY_NAME:'zc_api_key', MODEL:'deepseek-ai/DeepSeek-V4-Flash',
+  BASE:'https://api.siliconflow.cn/v1/chat/completions',
+  get key(){ try{return localStorage.getItem(this.KEY_NAME)||''}catch(e){return ''} },
+  enabled(){ return this.key.length>20 },
+  async chat(messages,maxTokens){
+    const r=await fetch(this.BASE,{method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+this.key},
+      body:JSON.stringify({model:this.MODEL,messages,temperature:0.75,max_tokens:maxTokens||900}),
+      signal:AbortSignal.timeout(35000)});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const j=await r.json();
+    const t=j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content;
+    if(!t) throw new Error('empty');
+    return t;
+  },
+  async chatJSON(messages,maxTokens){
+    const t=await this.chat(messages,maxTokens||900);
+    const m=t.match(/\{[\s\S]*\}/);
+    if(!m) throw new Error('no json');
+    return JSON.parse(m[0]);
+  }
+};
+function syncEngineUI(){
+  const on=LLM.enabled();
+  $('#llmBtn').classList.toggle('on',on);
+  $('#llmBtnTxt').textContent=on?'大模型在线':'本地引擎';
+  $('#modeHintA').textContent=on?'大模型转写（DeepSeek-V4-Flash）· 文本将发送至硅基流动':'纯本地分析，不上传任何内容';
+}
+$('#llmBtn').addEventListener('click',e=>{
+  e.stopPropagation();
+  const p=$('#llmPanel'); p.classList.toggle('open');
+  if(p.classList.contains('open')){ $('#llmKeyInput').value=LLM.key; $('#llmStatus').textContent=LLM.enabled()?'当前状态：已配置，AI 转写与 AI 导师已启用':'当前状态：未配置，运行本地规则引擎'; }
+});
+document.addEventListener('click',e=>{
+  const p=$('#llmPanel');
+  if(p.classList.contains('open')&&!p.contains(e.target)&&e.target!==$('#llmBtn')) p.classList.remove('open');
+});
+$('#llmSave').addEventListener('click',()=>{
+  const v=$('#llmKeyInput').value.trim();
+  if(v.length<20){ $('#llmStatus').textContent='这个 Key 看着不对，请检查'; return; }
+  localStorage.setItem(LLM.KEY_NAME,v);
+  syncEngineUI(); $('#llmStatus').textContent='已保存——现在去功能A或聊天室试试 AI 模式';
+  setTimeout(()=>$('#llmPanel').classList.remove('open'),1200);
+});
+$('#llmClear').addEventListener('click',()=>{
+  localStorage.removeItem(LLM.KEY_NAME); $('#llmKeyInput').value='';
+  syncEngineUI(); $('#llmStatus').textContent='已清除，回落本地引擎';
+});
+
+/* ---------- 功能A：LLM 转写 ---------- */
+async function llmGenSpeech(text){
+  const sys='你是学术汇报口语教练。输入是一段论文正文/实验结论。输出严格JSON：{"domain":"机器学习|医学实验|材料化学|经济金融|社科问卷|通用之一","hook":"一句包含贴切现实比喻的大白话核心结论(40字内)","script":["恰好3句口头逐字稿"],"tips":"一行贴PPT建议"}。script要求：①拆解原文所有长句、公式符号转口语(如p<0.01说成"显著性极强")；②每句嵌入自然过渡词("大家注意看这里…""我们最初预期是X,但实际…"等)；③在句中合适位置插入节奏标签[停顿1s]/[加重语气]/[手指PPT曲线]/[放慢语速]，保留在字符串里；④禁止出现书面语连接词"此外/综上所述"。';
+  const j=await LLM.chatJSON([{role:'system',content:sys},{role:'user',content:text}],1100);
+  if(!j.hook||!Array.isArray(j.script)||j.script.length<3) throw new Error('bad shape');
+  const tagRe=/\[(停顿 ?1s?|加重语气|手指 ?PPT(?:曲线)?|放慢语速)\]/g;
+  const hookHtml='<span class="hl-red">'+esc(j.hook)+'</span>';
+  const script=j.script.slice(0,4).map(s=>'<span class="beat">'+esc(s).replace(tagRe,'<i class="tag-beat">[$1]</i>')+'</span>');
+  return {domainName:j.domain+' · AI 转写',hookPlain:j.hook,hookHtml,script,
+    pptTip:esc(j.tips||'提炼后只留一个数字结论写在页面上'),
+    plainText:j.hook+'\n\n'+j.script.join('\n\n')+'\n\n[贴PPT建议] '+(j.tips||'')};
+}
+
+/* ---------- 15秒口播脚本（抖音分发素材） ---------- */
+let _lastA=null;
+function clipBlockHTML(){
+  return '<div class="block"><div class="block-label"><span>15 秒口播脚本（发抖音用）</span></div>'+
+    '<div class="clip-wrap"><button class="btn btn-ghost clip-btn" style="padding:8px 16px">生成口播脚本</button>'+
+    '<p class="hint">按短视频节奏拆成钩子/主体/引导三段，直接照着念</p></div></div>';
+}
+async function llmClip(){
+  const a=_lastA;
+  const j=await LLM.chatJSON([{role:'system',content:'你是15秒学术短视频编导。输入是一段论文的大白话转写（含一句话抓人结论）。输出严格JSON：{"hook":"0-3秒开场钩子，一句制造冲突/悬念的话，≤22字","body":"3-12秒核心内容，把大白话进一步口语化，2句以内","cta":"12-15秒结尾引导（点工具名并引导评论区），≤20字","tags":"4-6个抖音话题标签空格分隔"}。禁止书面语。'},{role:'user',content:'一句话抓人：'+a.hookPlain+'\n逐字稿要点：'+a.plainText.slice(0,300)}],500);
+  if(!j.hook||!j.body||!j.cta||!j.tags) throw new Error('bad shape');
+  return '【0-3秒】'+j.hook+'\n【3-12秒】'+j.body+'\n【12-15秒】'+j.cta+'\n\n'+j.tags;
+}
+function localClip(r){
+  const body=(r.scriptPlain||r.plainText.split('\n')[2]||r.hookPlain).replace(/\[[^\]]+\]/g,'').slice(0,60);
+  return '【0-3秒】论文写得很牛？导师只问一句：说人话。\n【3-12秒】'+r.hookPlain.replace(/\*\*/g,'')+'。'+body+'\n【12-15秒】工具叫组会求生舱，测测你的组会生存率。\n\n#研究生 #组会 #答辩 #导师 #学术';
+}
+document.addEventListener('click',async e=>{
+  const btn=e.target.closest('.clip-btn');
+  if(!btn) return;
+  const wrap=btn.parentElement;
+  const outEl=document.createElement('pre');
+  outEl.className='clip-out';
+  btn.disabled=true; btn.textContent='生成中…';
+  let text='';
+  try{
+    if(LLM.enabled()){ try{ text=await llmClip(); }catch(err){ showToast('AI 掉线了，回落本地模板'); } }
+    if(!text) text=localClip(_lastA||{hookPlain:'这篇论文的核心其实就一件事。',plainText:''});
+    outEl.textContent=text;
+    const cp=document.createElement('button');
+    cp.className='copy-btn'; cp.style.marginTop='10px';
+    cp.setAttribute('data-copy',encodeURIComponent(text));
+    cp.textContent='复制脚本';
+    wrap.appendChild(outEl); wrap.appendChild(cp);
+    bindCopyBtns(wrap,'');
+    btn.remove();
+  }catch(err){ btn.disabled=false; btn.textContent='生成口播脚本'; showToast('生成失败，再试一次'); }
+});
+
+/* ---------- 聊天室：LLM 判定+生成导师回复 ---------- */
+async function llmTutorTurn(q,userAns,historyArr){
+  const tone=TONE[persona];
+  const axes='你有五个攻击轴可轮换：①数据层（样本、口径、统计效力）②方法与实验设计（对照、消融、baseline 选择依据）③论证链（前提→推理跳跃→结论，哪一步没守住）④工程可行性（成本、部署、规模化）⑤学术表达（概念混用、文献定位、表述过强）。不要总打同一个轴。';
+  const sys='你在一个"导师夺命连环问模拟器"里扮演'+tone.name+'的研究生导师，无限追问模式：学生回答不够硬就一直追同一主题，绝无次数上限，直到你判断 pass。学生材料：「'+chat.material.slice(0,600)+'」。当前主题：「'+q.essence+'」，该主题第'+(chat.round+2)+'回合。'+axes+'\n你的说话风格必须严格遵守——'+tone.style+'\n风格示例——开场：'+tone.open[0]+' 驳回空话：'+tone.reject[0]+' 放行：'+tone.accept[0]+'。\n判定标准：pass=true 仅当学生回答含具体数字/数据来源/明确期限承诺/主动承认局限并给出补救之一且有实质内容；空洞表态（如"我会努力改进的"）、答非所问、复读问题、明显胡编 → pass=false。回复要求：①≤70字中文口语，第二人称；②优先引用学生材料或其原话里的细节反击（「你自己刚说过……」「你材料第X部分写的……」）；③不许出戏、不解释规则。输出严格JSON：{"pass":true/false,"reply":"导师的话"}';
+  const hist=historyArr.slice(-4).map(h=>h.role==='tutor'?'导师：'+h.text:'学生：'+h.text).join('\n');
+  const user=hist+'\n学生最新回答：'+userAns+'\n输出JSON。';
+  const j=await LLM.chatJSON([{role:'system',content:sys},{role:'user',content:user}],400);
+  if(typeof j.pass!=='boolean'||!j.reply) throw new Error('bad shape');
+  return {pass:j.pass,reply:String(j.reply).slice(0,160)};
+}
+
+/* dim: 数据可信度 data / 方法严谨性 method / 故事逻辑 logic / 局限意识 limit / 临场防御 defense */
+/* neg:true 表示「材料中应出现而未出现」反向触发 */
+const DETECTORS=[
+ {id:'sample',w:16,dims:['data'],boost:{detail:6},neg:true,
+  pat:/样本量|[nN]\s*[=＝]\s*\d|\d[\d,，.]*\s*(?:份|条|名|例|个)(?:数据|样本|患者|被试)/,
+  missNote:'全文没有交代样本量或数据规模',
+  q:{
+   detail:'我这个样本量怎么看怎么心虚，你先告诉我 n 到底是多少？是哪一年采的？有没有做过功效检验说这个量够不够？',
+   macro:'在一个这么小的样本上得出的结论，你怎么向审稿人和产业界证明它不是过拟合出来的运气？',
+   aggressive:'恕我直言，没有交代样本量和统计效力之前，后面这些漂亮数字我一个都不信。你自己敢签保证书吗？'},
+  essence:'样本规模未声明，统计效力无从判断',
+  defense:['您提醒得非常及时，样本量确实是这类研究的命门。',
+   '当前阶段我们优先跑通了方法流程，样本来自XX渠道共N份，一期主要目标是验证可行性而非给出最终显著性结论。',
+   '下一步我会补齐最小样本量的功效分析，把置信区间和检验力明确写进论文，两周内带新数据来向您复述一遍。'],
+  fq:'好，那我再问一句：就算补到那个数，你怎么排除采集偏差？',
+  fad:'承认采集渠道确实有偏向的可能，补充说明会引入分层抽样并报告不同子群的一致性作为折中防守。'},
+ {id:'control',w:16,dims:['method'],boost:{detail:5},neg:true,
+  pat:/对照|控制组|空白组|安慰剂|消融|ablation/i,
+  missNote:'缺少对照组或消融设计',
+  q:{
+   detail:'对照组呢？我怎么没看到一页提到空白对照或者消融？你说模块有用，那把这个模块拆掉跑一下，掉几个点？',
+   macro:'没有对照的比较，在我看来等于没有比较。你凭什么说收益来自你的方法本身？',
+   aggressive:'你这个流程里要是没有对照实验，那每一张图对我来说都可能是玄学曲线。现在告诉我为什么可以不做？'},
+  essence:'缺少空白对照或消融实验，因果归因不成立',
+  defense:['您这个角度非常关键，归因严谨性确实是第一位的。',
+   '目前版本里我们做了简化对比，正式版会补上完整的空白对照与逐模块消融表。',
+   '本周内我会把去掉各组件后的退化幅度整理成一页附录用数据说话，下次组会先放这页。'],
+  fq:'那如果消融之后发现收益主要来自数据处理技巧而不是模型呢？',
+  fad:'大方承认这种可能性存在，并顺势说明无论功劳归属如何、整体增益是实的，随后会把方法和数据处理各自的贡献占比量化清楚。'},
+ {id:'baseline',w:12,dims:['logic'],boost:{macro:6},neg:true,
+  pat:/基线|baseline|SOTA|前人方法|已有方法|对比实验|state[- ]of/i,
+  missNote:'未与前人工作建立量化对比',
+  q:{
+   macro:'在这个领域别人已经做了很多年了，你的工作和最好的那个方法之间，实质性的增量到底是什么？给我一个不可替代的理由。',
+   detail:'你和已有方法的差距到底几个点？在没有统一测试条件下比出来的数字，参考价值有多大？',
+   aggressive:'如果去掉包装，这是不是一个重新造轮子的工作？你替我说服一下我自己。'},
+  essence:'相对前人的增量贡献未量化定位',
+  defense:['您的这个问题帮我厘清了这项工作的真实站位。',
+   '相比前辈们的路径，我们的增量主要体现在XX场景下的适配性，而不是全面碾压式的精度领先。',
+   '我会补一张与前人工作逐维度对比的表格，把「谁强在哪、弱在哪」摆成一行一行的事实，避免空口强调优越性。'],
+  fq:'增量只有场景适配的话，理论价值是不是就不大了？',
+  fad:'先认可「应用导向≠理论贫瘠」需要证据支撑，承诺补充机理层面的分析章节，说明适配性提升背后的结构性原因。'},
+ {id:'overclaim',w:14,dims:['defense'],boost:{aggressive:7},
+  pat:/证明了?|证实了?|彻底解决|显著优于|首次提出|完美/,
+  hitNote:'结论措辞过强（出现了「证明」「彻底解决」类字眼）',
+  q:{
+   aggressive:'你这里写的是「证明了」。实验只能提供证据，何来证明一说？请你当场修正这句话。',
+   detail:'「彻底解决」这四个字的依据是什么？边界条件在哪里失效？',
+   macro:'把话说得太满，恰恰是评审最容易攻击的靶子。要不要现在就改措辞？'},
+  essence:'结论过度推断，语言强度超出证据强度',
+  defense:['确实，「证明」这个词是我用重了，谢谢老师指出。',
+   '更准确的表述应当是「在该设定下提供了有力证据」，有效的边界条件我们内部讨论过但没有落到纸面。',
+   '我会把全文所有强断言逐句降级为证据支持的表述，并把失效边界单独写成局限性小节。'],
+  fq:'那改成「证据支持」之后，这篇工作的卖点还剩多少？',
+  fad:'顺势把卖点从「万能结论」转移到「可复现的证据链」上，展示克制表述反而提高可信度的学术姿态。'},
+ {id:'nolimit',w:15,dims:['limit'],boost:{detail:3,macro:4},neg:true,
+  pat:/局限|不足之处|limitation|future work|constraint/i,
+  missNote:'通篇没有局限性声明',
+  q:{
+   detail:'每篇论文都有软肋，你的这一版连一句局限性都没写，是你觉得没有，还是不敢写？',
+   macro:'一个看不到自身边界的研究方向，我觉得很危险。你自己给它划三条红线，现在说。',
+   aggressive:'连 limitation 都不敢自己先说出来，是想留给评委来说吗？'},
+  essence:'缺乏自我批判，局限性意识缺位',
+  defense:['这一点上我确实准备不足，局限性应该在汇报里主动亮出来。',
+   '初步来看至少有三条：数据覆盖面有限、假设前提较理想化、验证周期还不够长。',
+   '我会在下一版开头单独设置局限与风险页，主动暴露边界，把被动的提问变成主动的规划。'],
+  fq:'那你划的三条红线里，哪一条是最可能让整个工作推倒重来的？',
+  fad:'诚实选出最重的那条并给出触发条件（若XX则需重构），展示你对风险的清醒排序而非闪烁其词。'},
+ {id:'novel',w:10,dims:['logic'],boost:{macro:4},
+  pat:/一定(?:程度)?(?:的)?(?:改进|提升)|有所(?:提升|改善)|较好|优异表现/,
+  hitNote:'创新点表述含糊（「有一定提升」「优异表现」）',
+  q:{
+   macro:'「有一定提升」是个学生词，不是研究者词。提升多少、在哪、跟谁比？给个站得住的说法。',
+   detail:'你这页写「优异表现」，我需要看到具体的百分比和误差范围，形容词不算证据。',
+   aggressive:'模糊的形容在答辩里等于零。现在就把数字从嘴里拿出来。'},
+  essence:'关键主张缺少定量支撑',
+  defense:['您说得对，形容词替代不了数字，回去我立即逐处替换。',
+   '这几处的实际数值分别在备查表里，属于当时排版省略，不是没有测。',
+   '今后所有主张遵循「无数字不结论」原则，每个论断后面直接挂引用表格编号。'],
+  fq:'如果补上数字后发现只有零点几个点的优势，你还认为值得做下去吗？',
+  fad:'预先区分「统计显著」与「实用显著」，说明即使小差距也可凭借成本或稳定性优势成立，同时列出扩大差距的具体计划。'},
+ {id:'nometric',w:10,dims:['data'],boost:{detail:3},neg:true,
+  pat:/\d+(\.\d+)?\s*[%％]|[nN]\s*=|\d+\.\d{2,}/,
+  missNote:'材料中几乎没有量化结果',
+  q:{
+   detail:'整整一份大纲，我没有看到一个硬数字。这条曲线是拟合的吗？方差多大？重复了几轮？',
+   macro:'全是定性描述的研究计划，经费评审第一个否。你们的量化路标在哪里？',
+   aggressive:'没有数字就没有科学，今天你必须当场给出至少一个可核查的数值。'},
+  essence:'关键环节缺乏定量证据',
+  defense:['老师指出的正是我最薄弱的地方，量化意识还不够。',
+   '目前已完成初步测试，数值还不稳定所以暂未写入大纲，这部分可以当面展示原始记录。',
+   '一周内我会固化指标口径并出具含误差棒的正式图表，同时在汇报模板里预留固定数字栏位。'],
+  fq:'原始记录如果经不起复查呢？',
+  fad:'强调记录全程留痕并可复跑，邀请抽查任意一组作为信任建设动作，把防御姿态转为开放姿态。'},
+ {id:'landing',w:8,dims:['logic'],boost:{macro:5,aggressive:3},neg:true,
+  pat:/落地|部署|成本|工业化|应用场景|开源|许可/,
+  missNote:'未讨论成本约束与现实落地路径',
+  q:{
+   macro:'这项工作就算全部成立，公司拿去能用吗？部署成本、维护门槛、数据获取难度，你有数吗？',
+   detail:'单次实验成本多少？规模化之后还会是这个表现吗？别只报理想环境里的成绩。',
+   aggressive:'实验室里的漂亮结果是温室花朵。把它放到生产环境，你能担保活多久？'},
+  essence:'研究与现实条件的衔接论证缺失',
+  defense:['这个问题超出了论文本身的范围，但确实是评价价值的必要一环。',
+   '就当前了解，主要瓶颈在于数据采集周期与算力开销，前者我们正与相关方沟通扩展渠道。',
+   '我会在结题前补一份半页纸的可行性备忘：粗略测算落地成本、最低适用规模与第一批候选用户清单。'],
+  fq:'候选人清单要是根本不存在呢？',
+  fad:'坦承需求侧仍在探索，转而强调方法的平台无关性可与多个下游兼容，并承诺优先寻找哪怕一个试点合作以形成闭环证据。'}
+];
+const GENERIC_FILL={
+ detail:[
+  {q:'最后一个问题：这几个参数的取值为什么偏偏是这几个？有没有扫过参？',essence:'超参数选定依据不明',
+   defense:['老师问到了流程里最容易被一笔带过的环节。','目前的取值沿用了领域内常用默认值并做了小幅手调，尚未系统网格搜索。','下周我会提交敏感性曲线，标出性能对每个参数的容忍区间。'],
+   fq:'如果敏感区间很窄呢？',fad:'直面回答窄区间意味着方法稳健性存疑，将坦诚汇报并把该结论的使用范围收窄至已验证配置。'},
+  {q:'你的误差棒是怎么算的？标准差、标准误还是置信区间？几张图之间口径一致吗？',essence:'误差呈现口径不清',
+   defense:['感谢确认这个细节，口径确实应该统一注明。','当前图注里混用了两种口径，是我疏忽，回头逐张核对更正。','以后所有图表统一采用均值加减95%置信区间，并在图注中显式声明。'],
+   fq:'那重画之后的结论方向会不会变？',fad:'如实回答大多数结论方向不变、幅度可能收窄，坚持「宁可数字难看也不失真」的原则。'},
+  {q:'重复实验跑了几次？随机种子固定了吗？换一台机器还能复现吗？',essence:'结果可复现性存疑',
+   defense:['这个问题直接关系结果可信度，应该主动交代。','关键实验跑了多次取平均，种子和依赖版本在补充材料里有记录。','我会整理一份一键复现脚本与环境说明，下次组会当场演示。'],
+   fq:'万一在你机器上能复现、别人不行呢？',fad:'承诺公开环境清单并邀请同学交叉验证一次，用第三方复现作为最有力的回应。'}],
+ macro:[
+  {q:'五年后回头看，你觉得这项研究会留下什么？一句话。',essence:'长期价值定位缺失',
+   defense:['这个问题逼我跳出眼前的实验视角想方向本身。','短期看是一套可行的方法验证，长期我希望沉淀为该场景的标准处理流程之一。','我会把五年图景压缩进未来规划的最后一页，并与中间里程碑挂钩。'],
+   fq:'连里程碑都需要「希望」，你们组的执行力怎么体现？',fad:'直接举出上一阶段按期交付的两个节点作为执行信用背书，避免辩解式回应。'},
+  {q:'学界做这个方向的少说十几家，你凭什么排得进第一梯队？给我三个理由。',essence:'竞争格局认知不足',
+   defense:['坦白说梯队位置需要用证据说话，我先把已知的说清。','与代表性工作相比，我们在XX维度有明确差异化优势。','我会补一份领域动态综述表，把自己的坐标画进去再谈梯队。'],
+   fq:'差异化优势要是三个月后被别人追平呢？',fad:'承认技术领先窗口有限，转向强调数据积累与场景绑定的护城河逻辑。'},
+  {q:'如果经费砍掉一半，你这个课题保哪一块、砍哪一块？现在说。',essence:'优先级判断压力测试',
+   defense:['我会保核心方法验证链，砍掉平行扩展场景。','因为课题成立与否取决于主命题是否有数据支撑，其余都是增值项。','我可以把两条线的优先级矩阵画出来当面确认。'],
+   fq:'核心验证链要是也超支呢？',fad:'给出降配预案（缩小数据规模但保留关键对照组），展示资源弹性而非硬扛。'}],
+ aggressive:[
+  {q:'我只给你十秒钟：把你整个工作的命门亲口说出来。说不出来就是没想明白。',essence:'自我认知压力测试',
+   defense:['十秒钟够。「XX 条件一旦不成立，核心结论就要打折」，这是我目前最大的软肋。','围绕它我已经排好了对应的加固实验。','欢迎老师随时按这个靶点继续追问。'],
+   fq:'既然知道还敢这样设计实验？',fad:'承认时间窗限制下的取舍逻辑，强调先立骨架后补筋肉的阶段策略并出示排期表。'},
+  {q:'假设明天有人发了和你几乎一样的文章，你的下一步是什么？',essence:'原创性焦虑拷问',
+   defense:['撞车不可怕，可怕的是没有退路。','我们的原始数据、实现细节和场景理解构成二次壁垒。','同时我不会盲目赶进度，而是把对方没有的系统评测补扎实。'],
+   fq:'评测补完之前你拿什么证明不是重复劳动？',fad:'亮出时间线证据表明工作并行开展，并用预注册思路主张研究的独立价值。'},
+  {q:'你的每个结论我都当场质疑一遍，现在轮到你：请反驳我刚才最刁钻的那个问题。',essence:'临场攻防实战检验',
+   defense:['我最想重新接招的是第X问。','当时的回答偏防守，其实可以更进取：已有的XX数据就能部分支撑。','这次演练暴露了我表达顺序的问题，之后我会按「承认-证据-承诺」的结构重新组织应答。'],
+   fq:'反驳得很流利，但声音都在抖，你觉得我信了吗？',fad:'坦然承认紧张并聚焦内容本身：把答辩能力拆成内容与表现两层，分别给出改进动作。'}],
+ dream:[
+  {q:'你这段方法描述其实写得很清楚——正因为它清楚，我才要问：换成数据分布漂移的场景，它还成立吗？',essence:'方法适用边界未划清',
+   defense:['谢谢老师，这个肯定我记下了，接下来如实回答边界问题。','当前验证范围是同分布场景，跨分布确实还没测。','两周内补一个迁移场景实验，把适用边界画进结论页。'],
+   fq:'画不出来怎么办？先别急着承诺。',fad:'把承诺降级为可交付动作（先给已有相关线索与时间表），强调诚实优先于画饼。'},
+  {q:'我想当一次你的评审：假设我是审稿人，请现在用三句话说服我接受这篇文章。准备好了就开始。',essence:'一图流 pitch 能力',
+   defense:['好，我试试：问题真实、方案轻量、证据闭环，这是我的三句话骨架。','每句后面我都准备了数据支撑点随时展开。','如果审稿人不买账，我最希望听到他卡在哪一句。'],
+   fq:'第二句"轻量"被我用参数量打回来了，继续吗？',fad:'当场把"轻量"改口径为"同等精度下部署成本更低"，学会给卖点加防御性定义。'},
+  {q:'带学生三年，我第一次看到有人把失败实验也放进附录。说实话，这比成功更打动我。但我要问：你从中学到了什么别人学不到的？',essence:'失败经验反哺深度',
+   defense:['这个失败让我修正了对 XX 的两个默认假设。','具体来说，负结果指向了评测协议本身的盲区。','我会把这个教训写成一段方法论注记，它比正向结果更有传播价值。'],
+   fq:'注记解决不了方向问题，你的下一步到底动不动手？',fad:'承认反思需落到实验动作：给出基于教训设计的新实验排期。'}],
+ devil:[
+  {q:'不一定吧？你这结论我在心里能想出三个反例，挑最狠的说：极端输入下它直接崩，你怎么解释？',essence:'反例构造攻击完备性',
+   defense:['您总能找到我没见过的输入空间，这题接得住一半。','当前结论的成立范围确实不含极端输入场景。','我会补对抗样本与压力测试，把结论改写成带明确适用边界的版本。'],
+   fq:'补测试之前你敢不敢先用这个词？',fad:'承诺在报告里为该结论加脚注限定语，展示先约束语言再补证据的严谨姿态。'},
+  {q:'你说 A 导致 B？万一没有 A 它照样发生呢？你的对照设计里有没有这一层？',essence:'因果链缺反向论证',
+   defense:['反向情形这个口子提得准，现有对照没把它单独切开。','目前只有前后测对比，确实无法排除无 A 也发生 B 的路径。','加一组不含 A 的空转对照，两周内跑出来给您。'],
+   fq:'两周后要是两组没差异呢？',fad:'坦然接受该结果并说明这将推翻原因果假设——用「愿意被自己设计的实验证伪」回应质疑。'},
+  {q:'万一成本涨十倍、万一数据翻百倍、万一评审全盘要求换指标——三个"万一"里你最怕哪个？为什么其他的可以不怕？',essence:'压力面完备性排序',
+   defense:['三个都怕是实话，但排序是：指标变更最怕。','因为方法贡献和评价体系强绑定，前两个只影响工程量不影响命题成立。','所以我的防御预算优先投在多协议兼容评测上，下月出第一版对比。'],
+   fq:'预算要是证明投错了呢？',fad:'给出止损线设计（中期检查点+回退方案），把坚持表述为可撤销决策而非死磕。'}]
+};
+
+function scanFlaws(text){
+  const found=[]; const seen=new Set();
+  for(const d of DETECTORS){
+    if(seen.has(d.id)) continue;
+    const hit = d.neg ? !d.pat.test(text) : d.pat.test(text);
+    if(hit){ seen.add(d.id); found.push({...d}); }
+  }
+  return found.sort((a,b)=>b.w-a.w);
+}
+function buildQuestions(text,personaKey){
+  const hits=scanFlaws(text);
+  const scored=hits.map(d=>({ ...d,score:d.w+(d.boost&&d.boost[personaKey]||0) }));
+  scored.sort((a,b)=>b.score-a.score);
+  let list=scored.slice(0,5);
+  // 不足则按人设补充经典题
+  const fillers=(GENERIC_FILL[personaKey]||[]);
+  let fi=0;
+  while(list.length<5 && fi<fillers.length){
+    list.push({...fillers[fi],generic:true});
+    fi++;
+  }
+  return list.slice(0,5);
+}
+
+/* ==================================================================
+   功能 B 渲染
+================================================================== */
+$$('.persona').forEach(el=>el.addEventListener('click',()=>{
+  $$('.persona').forEach(x=>x.classList.remove('on'));
+  el.classList.add('on');
+  persona=el.dataset.p;
+  $('#personaName').textContent=personaNames[persona];
+}));
+/* ---------- 导师语风档案（借鉴开源「导师.skill」人设蒸馏思路） ---------- */
+const TONE={
+ detail:{
+  name:'细节狂魔型',
+  open:['嗯，那我先抠一个细节：','等一下，这里有个地方我不太放心：','翻到你这页材料了，我就问：'],
+  reject:['你没听懂我的问题。我要的是可核查的东西，不是态度。','这套说法糊弄得了别人，糊弄不了我。来点具体的。','还是在绕。我把问题原样再放一遍。'],
+  hollow:['说得很大，落点在哪？我没看到一个能写进记录的数字或动作。','这一段像总结陈词。回到问题本身。'],
+  accept:['行，这个问题算你有准备。过。下一题。','可以，数据摆出来就好办了。记下了，通过。','嗯，这样我就能对上号。这题放你过去。'],
+  weak:['「努力改进」四个字我先收下，但评分不计入。','态度分给了，事实分还没有。继续。'],
+  finale:'今天从细节里看，你的基本功到底扎不扎实，我心里已经有数了。把材料回去逐条补硬，下次组会我来验收。',
+ },
+ macro:{
+  name:'宏观战略型',
+  open:['我们先把镜头拉高一点。我问：','不聊琐碎的，直接说本质：','这个工作放到领域大图里去看——'],
+  reject:['这是在复述上一句话，不是回答。往深一层想。','我关心的是定位和增量，你再组织一下语言。','答非所问。别背稿子，用你自己的理解说。'],
+  hollow:['愿景很好，但我问的是这条路上的具体一级台阶。','格调有了，逻辑链没接上。再想想。'],
+  accept:['好，这个定位我认了。下一题。','清楚了，边际贡献说得出来就行。通过。','不错，这个故事讲圆了。继续。'],
+  weak:['「争取」不是一个研究计划。给我可执行的路径。','表态我最不怕听。我要听推导。'],
+  finale:'宏观上你想清楚的事比多数人多一层，但空档也很明显。方向定了就把每一级台阶铺实，下次我们只谈证据。',
+ },
+ aggressive:{
+  name:'激进压制型',
+  open:['我只说一遍这个问题的前提，你接好：','别紧张，我不是刁难——我是提前帮你暴露问题：','快节奏环节来了，跟得上就跟，跟不上我等你：'],
+  reject:['这不叫回答，这叫续杯白开水。重来。','我在听内容，不是在听声调。给实质。','绕过去了？没门。原题再来。'],
+  hollow:['漂亮话在我这里不加分。上干货。','这都是无信息量输出。重新作答。'],
+  accept:['可以，这轮扛住了。下一题。','勉强算过，刚才要是组会上,你已经省下一次冷场。','嗯，反应在线。记你一功，继续。'],
+  weak:['口号留着动员大会用。现在，正面回答。','又来。我的耐心和你的数据一样有限。'],
+  finale:'今天压得狠，是因为真实答辩只会更狠。你现在知道哪里会碎了，碎之前修好它。收工。',
+  style:'高压快节奏，短句、祈使句和命令式为主，几乎不用客套话；会直接说"重来""不对"，用倒计时施压。'
+ },
+ dream:{
+  name:'梦中情导型',
+  open:['先说说做得好的部分——','我看完的第一印象其实不错，正因为不错，我才要更认真地问你：','这份材料里最打动我的是 XX，但打动我之后我产生了更多问题：'],
+  reject:['别急，我不是在否定你，但你刚才这个回答连自己都说服不了，对吧？','这段话听起来很圆满，可它没有回答"凭什么"。再想一步。','我懂你的意思了，但这个意思现在还撑不起结论。'],
+  hollow:['态度很好，但态度不是证据。我们回到证据本身，好吗？','温柔点说：这叫感想，不叫研究。再来一次？'],
+  accept:['好，这才对嘛。我就知道你身后还藏着货。这道题过。','漂亮。你看，一认真答就露才气了。记下，通过。','嗯——这才是我想听到的层次感。下一题。'],
+  weak:['你是我带过的学生里最有潜力的那批，所以我不会放水。「努力」这个词，换成一个日期。','我真的愿意为你鼓掌，但先给个能让我鼓掌的东西。'],
+  finale:'整体超出我的预期，你的优点是诚恳，短板是把「想了」当成「做了」。按今天聊的去补，你下学期的汇报我会非常期待。',
+  style:'先扬后抑的节奏：开口先真诚肯定一个具体亮点（要引用材料细节），再用温和语气抛出锋利问题；口头禅"好吗""对吧""再说一次？"，偶尔自嘲。全程不吼不压，杀伤力来自反差。'
+ },
+ devil:{
+  name:'抬杠高手型',
+  open:['我先声明，我这个人看什么都觉得不一定对——','不错，讲得头头是道。所以我要开始泼冷水了：','你这个说法让我立刻想到了一个反例：'],
+  reject:['不一定吧？你自己再琢磨琢磨这句话有没有漏洞。','又来了。你每个论断背后都躲着一个反例，我最擅长把它们挖出来。','我不同意这个解释。注意，我说的不同意是指：它能被一个特例直接击穿。'],
+  hollow:['都是正确的废话。任何一句话放之四海皆准的话，在研究里价值为零。','你这是把结论穿上了一件外套。衣服脱掉，里面什么都没有。'],
+  accept:['行吧，这一下你把我准备的三个反例堵回去两个了。算过。','难得难得，居然考虑到了边界情况。我暂时闭嘴，下一题。','好，这个回答有防杠属性了。记录一下，通过。'],
+  weak:['这种表态在我这里只会激发更多的杠。上一个反例还想好了吗？','我又要说"不一定"了。猜猜为什么？因为你还是没给条件范围。'],
+  finale:'今天你可能觉得我很烦，但记住：评审席上坐的都是我这样的物种。你把这些反例都提前排掉了，他们就没东西可问。散会。',
+  style:'以"不一定""但是""万一"开场，擅长构造极端案例与边界特例来攻击论断的完备性；句尾常带反问，喜欢说"你自己想想"；即使认可也要先唱半句反调。'
+ }
+};
+/* 三轮递进弹药：r1 用检测器/通用题库原题，r2/r3 按漏洞类型定制 */
+const PRESS={
+ sample:{r2:'我没听到数。n 到底多少、哪一批、凭什么够用？三件事一口气说完。',
+        r3:'样本问题是我给你的最后一块试金石：现在把「规模-来源-效力」三个词各配一个数字说出来，说不齐按不过处理。'},
+ control:{r2:'还是没落地。你把最关键的模块拆掉重跑一遍，预计掉几个点？没有数字也给我个范围。',
+        r3:'对照组这道题已经追了两轮。最后一遍：消融方案有没有、什么时候出、掉点预期多少，三连答。'},
+ baseline:{r2:'对比对象太虚。你说增量，那就报三个数：前人最好做到哪、你做到哪、差距主要来自哪个模块。',
+        r3:'最后一次机会立住你的增量：一句话讲清「别人为什么做不出来、而你做出了什么」，其余免谈。'},
+ overclaim:{r2:'措辞降级不够。「证明」「彻底解决」换成什么强度的表述？边界条件在哪里开始失效？当场改。',
+        r3:'这道题考的是学术分寸感。最后一轮：把你最强的一个结论原文念出来，然后亲手把它改写成证据能支撑的版本。'},
+ nolimit:{r2:'刚才的三条红线我听着都是软钉子。挑一条讲透：它会不会让你整个方法在某种场景下直接不可用？',
+        r3:'局限性这题必须见血。现在只说最致命的那一条、它被触发的条件、以及触发后的应急方案，三句说完。'},
+ novel:{r2:'形容词没收。「优异」换算成数字：具体几个点、误差多少、重复几次？现场补给你自己。',
+        r3:'数字题最后一轮：如果你的关键指标只有零点几的优势，留下它的理由是什么？三十秒说圆。'},
+ nometric:{r2:'还是没有数字。随便挑你最核心的一条曲线：横纵轴是什么、方差多大、跑了几轮，先报这一条。',
+        r3:'最后一个数字机会。把你最硬的那个结果当作考场必答题报出来，含糊即视为缺席。'},
+ landing:{r2:'成本还没见到影。单次实验或单台部署大概多少钱、多久见效、第一年卡脖子的环节是哪个？粗估也要有。',
+        r3:'落地题终局：如果明天就要向产业方汇报可行性，你手里有什么、缺什么、两周内能补上哪一样，老实交代。'}
+};
+const FINAL_TPL={
+ detail:essence=>'这题只剩最后一问了——关于「'+essence+'」，你现在把话说死、说清楚，说不清就记不过。',
+ macro:essence=>'抛开所有细节：关于「'+essence+'」，你现在用一句话定调。定不准，这题就悬在这里。',
+ aggressive:essence=>'最后一轮。关于「'+essence+'」，十秒内给我一个能写进会议纪要的答案。说不出来，按不过处理。'
+};
+const GENERIC_PRESS={r2:'我再给你一轮机会。上一个回答太空，请对着我的原问题给出至少一个具体的数字、日期或可核查动作。',
+  r3:'第二轮加码到此为止。同样的回答策略再出现一次，本题直接判定为未通过——想清楚再开口。'};
+
+/* ---------- 回答判定（本地启发式） ---------- */
+function judgeAnswer(ans){
+  const a=(ans||'').trim();
+  if(a.length<4) return {grade:'short'};
+  const hasNum=/\d/.test(a);
+  const promise=/第?[\d一二两三四五]+?\s*(?:周|天|个月|月底)|下周|两周内|三周内|下次组会|月底之前/.test(a);
+  const action=/(补|加|重跑|再加|多跑|做一组|测试|整理|替换|重新设计|问卷|扩)/.test(a);
+  const hardTerm=/对照|消融|基线|局限|置信|标准误|方差|种子|复现|功效|边界|子集|抽样|敏感/.test(a);
+  let solid=false;
+  if(hasNum&&a.length>=10) solid=true;
+  if(promise&&action) solid=true;
+  if(hardTerm&&a.length>=12) solid=true;
+  const admit=/确实|承认|是我的问题|考虑不周|疏忽|没做到位|准备不足/.test(a);
+  if(solid) return {grade:'solid',admit};
+  const pureAttitude=/努力|争取|尽量|会改进|注意|重视|加油|好好/.test(a)&&!solid;
+  return {grade:pureAttitude?'weak':(a.length<16?'hollow':'hollow'),admit};
+}
+
+/* ---------- 聊天状态机 ---------- */
+let chat=null;
+function newChatState(material){
+  return {material,personaSnapshot:persona,qs:buildQuestions(material,persona),qi:0,
+    round:0,tally:[],pocketUses:0,busy:false,done:false,lastJudge:null,log:[],totalRounds:0};
+}
+function chatRoot(){ return $('#chatBox'); }
+function tutorLabel(){ return personaNames[persona]; }
+
+function pushBubble(html,cls){
+  const stream=chatRoot().querySelector('.chat-stream');
+  const d=document.createElement('div'); d.className='bub '+cls; d.innerHTML=html;
+  stream.appendChild(d); stream.scrollTop=stream.scrollHeight;
+  return d;
+}
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+async function tutorSay(text,tags){
+  const stream=chatRoot().querySelector('.chat-stream');
+  const ty=document.createElement('div'); ty.className='bub typing'; ty.innerHTML='<i></i><i></i><i></i>';
+  stream.appendChild(ty); stream.scrollTop=stream.scrollHeight;
+  await sleep(Math.min(500+text.length*14,1500));
+  ty.remove();
+  const meta='<div class="bub-meta">'+esc(tutorLabel())+' · 第'+(chat.round+1)+'轮</div>';
+  const tagHtml=(tags&&tags.length)?tags.map(t=>'<span class="bub-tag">'+esc(t)+'</span>').join(''):'';
+  pushBubble(meta+esc(text)+tagHtml,'bub-tutor');
+  if(chat&&chat.log) chat.log.push({role:'tutor',text:text});
+  chat.busy=false;
+  syncInput();
+}
+function updateProgress(){
+  const box=chatRoot();
+  const passedN=chat.tally.filter(t=>t.pass).length;
+  const denom=Math.max(scanFlaws(chat.material).length,chat.tally.length,passedN,1);
+  box.querySelector('.cp-fill').style.width=Math.min(96,passedN/denom*100)+'%';
+  box.querySelector('.cp-label').textContent='回合 '+chat.totalRounds+' · 已攻破 '+passedN+' 处';
+}
+function syncInput(){
+  const ta=chatRoot().querySelector('.chat-input textarea');
+  const send=chatRoot().querySelector('.send-btn');
+  const pk=chatRoot().querySelector('.pocket-btn');
+  const gv=chatRoot().querySelector('.giveup-btn');
+  const dis=chat.busy||chat.done;
+  ta.disabled=dis; send.disabled=dis; pk.disabled=dis;
+  if(gv) gv.disabled=chat.done;
+}
+function currentQuestion(){ return chat.qs[chat.qi]; }
+function roundText(q){
+  if(chat.round===0) return q.q;
+  if(chat.round===1) return (q.fq)||((PRESS[q.id]||GENERIC_PRESS).r2);
+  if(chat.round===2){
+    const p=PRESS[q.id];
+    return p?p.r3:FINAL_TPL[persona](q.essence);
+  }
+  return null;
+}
+async function askCurrent(){
+  updateProgress(); syncInput();
+  const q=currentQuestion();
+  const opener = chat.round===0 ? pick(TONE[persona].open,(hash(q.essence))+chat.qi)+' ' : '';
+  const tags = q.generic
+    ? ['【发难点】'+q.essence,'通用高危题']
+    : ['【发难点】'+q.essence,'由材料漏洞触发'];
+  await tutorSay(opener+roundText(q),tags);
+  if(!chat.tally[chat.qi]) chat.tally.push({essence:q.essence,rounds:0,pass:false,assisted:false});
+  updateProgress();
+}
+/* ---------- 无限追问：话题推进（预设题用尽后 AI/本地自由出题） ---------- */
+const ENDLESS_EXTRA={
+ detail:[{essence:'关键假设未论证',generic:true,q:'你这一整套分析建立在一个前提上——但前提本身你论证过吗？说出来我听听。',
+   defense:['确实这个前提需要交代来源。','目前它是参考同领域通行做法设定的。','下次汇报我会附上文献依据与敏感性分析，先讲清它失效时的边界。']}],
+ macro:[{essence:'三年后的位置',generic:true,q:'抛开眼前这些数字。三年后这个方向如果还在做，靠什么活着？',
+   defense:['这个问题我想过。','短期靠数据积累形成壁垒，中期看它能否标准化成工具。','我会整理一份三阶段路线图带来讨论可行性。']}],
+ aggressive:[{essence:'最坏情况预案',generic:true,q:'别给我讲故事了。如果核心模块上线当天崩了，你的 B 计划是什么？有还是没有？',
+   defense:['有降级路径，当前版本的退化开关是XX。','我承认备份方案没验证过。','一周内补一份故障演练记录，把回退流程跑通给您看。']}],
+ dream:[{essence:'亮点背后的代价',generic:true,q:'我最欣赏你材料里 XX 这一点——不过我一直好奇：你为它付出了什么代价？把它诚实地摆出来。',
+   defense:['谢谢老师看到这一点，代价确实存在。','主要牺牲了推理时延和部署灵活性两处。','下版我会给出性能/成本权衡曲线，让这个亮点带上价签。']}],
+ devil:[{essence:'结论的充分必要条件',generic:true,q:'不一定吧？我随便就能构造一个你的方法失效的场景。要不要我现在造一个给你看？',
+   defense:['您要造随时欢迎，我先自己来：已知的失效场景是XX。','为了防杠我把结论改写成带边界条件的版本。','下周附上对抗性压力测试结果，专门邀请您现场出题。']}]
+};
+async function advanceTopic(){
+  chat.qi++; chat.round=0; chat.lastJudge=null;
+  if(chat.qi<chat.qs.length){ askCurrent(); return; }
+  /* 预设隐患问完 → 深挖模式 */
+  chat.busy=true; syncInput();
+  if(LLM.enabled()){
+    try{
+      const asked=chat.tally.map(t=>'「'+t.essence+'」'+(t.pass?'(已攻破)':'')).join('、');
+      const sys='你是研究生导师（'+TONE[persona].name+'），正对学生的汇报材料连续发难。学生材料：「'+chat.material.slice(0,700)+'」。你的说话风格——'+TONE[persona].style+'\n可用的攻击轴：数据层/方法与实验设计/论证链/工程可行性/学术表达。已考察过的主题：'+asked+'。请挑选一个尚未追问过的死角发起新拷问；若主要问题都已考察完毕、确实没什么可再问的了，才允许收尾。输出严格JSON之一：{"finish":true} 或 {"essence":"≤12字发难本质","question":"完整的导师质问，60字内"}';
+      const j=await LLM.chatJSON([{role:'system',content:sys},{role:'user',content:'出下一题或收尾。'}],400);
+      if(j.finish===true){ finishChat('auto'); return; }
+      if(j.question&&j.essence){
+        const q={id:'free',generic:true,q:String(j.question).slice(0,120),essence:String(j.essence).slice(0,16),
+          defense:['您指出的这个点我确实还没想透。','目前的处理方式是……（如实说明）。','我会补做相关论证，下次组会给出结论。']};
+        chat.qs.push(q); chat.tally.push({essence:q.essence,rounds:0,pass:false});
+        chat.qi=chat.qs.length-1; chat.busy=false;
+        askCurrent(); return;
+      }
+    }catch(e){}
+    showToast('AI 出题失败，回落通用题库');
+  } else {
+    await sleep(500);
+  }
+  /* 本地：从漏网检测器 / 预置弹药库循环取题 */
+  const seen=new Set(chat.tally.map(t=>t.essence));
+  let cand=buildQuestions(chat.material,persona).find(x=>!seen.has(x.essence))
+        ||ENDLESS_EXTRA[persona].find(x=>!seen.has(x.essence))
+        ||ENDLESS_EXTRA[persona][0];
+  const q={...cand,generic:true};
+  chat.qs.push(q); chat.tally.push({essence:q.essence,rounds:0,pass:false});
+  chat.qi=chat.qs.length-1; chat.busy=false;
+  askCurrent();
+}
+function resolveCurrent(pass,verdict){
+  const rec=chat.tally[chat.qi]||{essence:'',rounds:0,pass:false};
+  rec.pass=pass;
+  rec.rounds=chat.round+1;
+  rec.assisted=!!chat.pocketPending&&pass;
+  chat.pocketPending=false;
+  chat.lastJudge=verdict;
+}
+async function handleSend(){
+  if(!chat||chat.done) return;
+  const ta=chatRoot().querySelector('.chat-input textarea');
+  const val=ta.value.trim();
+  if(!val){ showToast('先把话打出来'); return; }
+  chat.busy=true; syncInput();
+  pushBubble('<div class="bub-meta">我</div>'+esc(val),'bub-me');
+  ta.value='';
+  chat.log.push({role:'me',text:val});
+  chat.totalRounds++;
+  await sleep(300);
+  const q=currentQuestion();
+  const assisted=chat.pocketPending;
+
+  /* AI 导师分支：语义判定 + 自由生成回复（无限追击，直到 pass 或主动离场） */
+  if(LLM.enabled()){
+    let turn=null;
+    const think=pushBubble('<div class="bub-meta">'+esc(tutorLabel())+' · 思考中</div><i></i><i></i><i></i>','bub typing');
+    chatRoot().querySelector('.chat-stream').scrollTop=99999;
+    try{ turn=await llmTutorTurn(q,val,chat.log); }catch(e){ showToast('AI 掉线了，本轮回落本地规则'); }
+    think.remove();
+    if(turn){
+      if(assisted&&turn.pass){
+        turn.reply+=' 锦囊味很重——内容成立，但下次组会我希望是从你自己嘴里长出来的。';
+      }
+      resolveCurrent(turn.pass,{grade:turn.pass?'solid':'hollow'});
+      await tutorSay(turn.reply);
+      if(turn.pass){ advanceTopic(); }
+      else {
+        chat.round++;
+        updateProgress();
+        syncInput();
+      }
+      return;
+    }
+    /* fallthrough：AI 失败 → 本地逻辑 */
+  }
+
+  /* 本地规则分支：同样无限追击 */
+  const verdict=judgeAnswer(val);
+  if(verdict.grade==='solid'){
+    resolveCurrent(true,verdict);
+    let acc=pick(TONE[persona].accept,hash(val)+chat.qi);
+    if(verdict.admit) acc+=' 能主动认账，这在追问里是最聪明的走法。';
+    if(assisted) acc+=' 锦囊味很重——内容成立，但下次组会我希望是从你自己嘴里长出来的。';
+    await tutorSay(acc);
+    advanceTopic();
+  } else {
+    const pool= verdict.grade==='weak'?TONE[persona].weak:TONE[persona].hollow;
+    let reply=pool[(hash(val)+chat.round)%pool.length];
+    if(verdict.grade==='short') reply='回答太短，等于弃权。再说一遍。';
+    chat.round++;
+    resolveCurrent(false,verdict);
+    await tutorSay(reply);
+    if(chat.round>=2&&chat.round%2===0){
+      const rt=roundText(currentQuestion());
+      if(rt&&rt!==q.q){ await sleep(350); await tutorSay(rt); }
+    } else {
+      syncInput();
+    }
+  }
+}
+async function finishChat(mode){
+  chat.done=true; syncInput();
+  updateProgress();
+  const passed=chat.tally.filter(t=>t.pass).length;
+  const topics=Math.max(chat.tally.length,1);
+  const avgRounds=(chat.tally.reduce((n,t)=>n+t.rounds,0)/topics).toFixed(1);
+  const hardest=[...chat.tally].sort((a,b)=>b.rounds-a.rounds)[0];
+  await tutorSay(mode==='surrender'
+    ?('行，今天就到这里——是你自己喊停的，报告里我会如实记一笔。'+TONE[persona].finale)
+    :TONE[persona].finale);
+
+  const ratio=passed/topics;
+  const gradeT = ratio>=0.8?{letter:'A',cap:'抗揍型选手'}
+               : ratio>=0.6?{letter:'B',cap:'有来有回'}
+               : ratio>=0.4?{letter:'C',cap:'被打成筛子'}
+               : {letter:'D',cap:'建议连夜重构材料'};
+  const rep=document.createElement('div');
+  rep.className='report-panel';
+  rep.innerHTML=
+   '<h3>本场面谈报告</h3>'+
+   '<p style="color:var(--muted);font-size:14px">对手：'+esc(TONE[persona].name)+' · 材料隐患 '+scanFlaws(chat.material).length+' 处'+(mode==='surrender'?' · <span style="color:var(--accent)">你中途举手投降了</span>':' · 导师主动收卷')+'</p>'+
+   '<div class="rp-grid">'+
+     '<div class="rp-item"><div class="rp-num">'+passed+'<span style="font-size:18px;color:var(--muted)">/'+topics+'</span></div><div class="rp-cap">攻破发难点</div></div>'+
+     '<div class="rp-item"><div class="rp-num">'+chat.totalRounds+'</div><div class="rp-cap">总回合数</div></div>'+
+     '<div class="rp-item"><div class="rp-num">'+avgRounds+'</div><div class="rp-cap">平均应答轮次</div></div>'+
+     '<div class="rp-item"><div class="rp-num" style="color:'+(chat.pocketUses>2?'var(--accent)':'var(--text)')+'">'+chat.pocketUses+'</div><div class="rp-cap">锦囊使用次数</div></div>'+
+     '<div class="rp-item"><div class="rp-num" title="'+esc(gradeT.cap)+'">'+gradeT.letter+'</div><div class="rp-cap">'+esc(gradeT.cap)+'</div></div>'+
+   '</div>'+
+   '<div class="rp-verdict"><b>'+esc(hardest?('最狼狈一题：「'+hardest.essence+'」（撑了 '+hardest.rounds+' 轮）'):'')+'</b><br>'+
+     (ratio>=0.8?'状态良好：保持这套「给数字 + 给期限 + 认边界」的应答骨架，实战基本够用。'
+      :ratio>=0.4?'中规中矩：不少题靠多轮缠斗才过关，首轮回答习惯性回避要害，试着开门见山给硬证据。'
+      :'高危：大部分发难点没能撑住。建议把每道题的自救话术抄进讲稿备注区，重点加固「'+esc(hardest?hardest.essence:'')+'」。')+
+   '</div>'+
+   '<button class="btn btn-primary restart-btn">再战一场</button> '+
+   '<button class="btn btn-ghost back-setup-btn">返回修改材料 / 人设</button>';
+  chatRoot().appendChild(rep);
+  rep.scrollIntoView({behavior:'smooth',block:'nearest'});
+  const r0=rep.querySelector('.restart-btn'), b0=rep.querySelector('.back-setup-btn');
+  r0.addEventListener('click',()=>{ renderChatShell(); });
+  b0.addEventListener('click',()=>{
+    $('#chatBox').innerHTML=''; $('#setupB').style.display='';
+    window.scrollTo({top:$('#f-b').offsetTop-64,behavior:'smooth'});
+  });
+}
+
+/* ---------- 聊天室启动 ---------- */
+function renderChatShell(){
+  const material=$('#taB').value.trim();
+  chat=newChatState(material);
+  const box=$('#outB');
+  box.innerHTML=
+   '<div class="chat-shell" id="chatBox">'+
+     '<div class="chat-progress"><span class="cp-label">准备中…</span><div class="cp-track"><div class="cp-fill"></div></div></div>'+
+     '<div class="chat-stream"></div>'+
+     '<div class="chat-input">'+
+       '<textarea rows="2" placeholder="'+(persona==='aggressive'?'简短有力地顶回去…':'接住导师的问题…')+'" id="chatTa"></textarea>'+
+       '<button class="pocket-btn" title="填入当轮自救话术">自救锦囊</button>'+
+       '<button class="btn btn-ghost giveup-btn" style="padding:10px 16px;white-space:nowrap" title="主动离场并生成面谈报告">举手投降</button>'+
+       '<button class="btn btn-primary send-btn" style="padding:10px 22px">发送</button>'+
+     '</div>'+
+   '</div>';
+  $('#setupB').style.display='none';
+
+  const boxC=$('#chatBox');
+  boxC.querySelector('.send-btn').addEventListener('click',handleSend);
+  boxC.querySelector('.giveup-btn').addEventListener('click',()=>{
+    if(chat.done||chat.busy) return;
+    if(!window.confirm('确定现在结束面谈并生成报告吗？（会如实记录你当前的战绩）')) return;
+    finishChat('surrender');
+  });
+  boxC.querySelector('#chatTa').addEventListener('keydown',e=>{
+    if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){ e.preventDefault(); handleSend(); }
+  });
+  boxC.querySelector('.pocket-btn').addEventListener('click',()=>{
+    const q=currentQuestion();
+    if(!q) return;
+    boxC.querySelector('#chatTa').value=q.defense.join('\n');
+    chat.pocketPending=true; chat.pocketUses++;
+    showToast('锦囊已入稿——发送后将计入依赖统计');
+    boxC.querySelector('#chatTa').focus();
+  });
+
+  // 开场气泡
+  const flawN=scanFlaws(material).length;
+  (async()=>{
+    chat.busy=true;
+    const intro={
+      detail:'进来了就好。材料我看完了，'+flawN+'处硬伤都画了圈。我们一题一题来，答不上别愣着，接不上我会告诉你。准备好了就开始。',
+      macro:'坐。你这份材料在领域图景里的位置，说实话还站不稳。'+flawN+'个地方需要当面碰一碰。我们从最大的那个问题开始，节奏不用你管。',
+      aggressive:'东西我扫了一眼，'+flawN+'个漏洞，不算少。规则很简单：我问到第几层你就接到第几层，扛不住就说扛不住。开始。'
+    };
+    await tutorSay(intro[persona]);
+    askCurrent();
+  })();
+}
+$('#btnB').addEventListener('click',()=>{
+  const val=$('#taB').value.trim();
+  const err=$('#errB');
+  if(val.length<10){ err.classList.add('show'); $('#taB').focus(); return; }
+  err.classList.remove('show');
+  renderChatShell();
+});
+$$('.demo-b').forEach(b=>b.addEventListener('click',()=>{
+  $('#taB').value='本研究提出一种基于注意力机制的轻量化缺陷检测模型。方法部分采用多尺度特征提取与改进的损失函数，在自建工业质检数据集上进行了验证，模型取得了优异的表现，有一定提升。本研究证明了该方法的先进性，未来将进一步开展相关工作。';
+}));
+
+/* ==================================================================
+   功能 C：生存指数
+================================================================== */
+const DIM_NAMES={data:'数据可信度',method:'方法严谨性',logic:'故事逻辑',limit:'局限意识',defense:'临场防御力'};
+function computeRisk(text){
+  const flaws=scanFlaws(text);
+  // 以「生存率」为基准：每命中一处隐患直接扣分
+  let survival=100;
+  for(const f of flaws){ survival-=f.w*0.92; }
+  // 正向缓冲信号
+  if(/局限|limitation/i.test(text)) survival+=6;
+  survival+= (hash(text)%7)-3;           // 微扰动避免千篇一律
+  const survive=clamp(Math.round(survival),7,97);
+
+  // 五维扣分明细
+  const dims={};
+  Object.keys(DIM_NAMES).forEach(k=>dims[k]={lost:0,items:[]});
+  for(const f of flaws){
+    const lost=Math.round(f.w*0.8);
+    for(const d of f.dims){
+      dims[d].lost+=lost;
+      dims[d].items.push(f.hitNote||f.missNote||f.essence);
+    }
+  }
+  const dimScores=Object.keys(DIM_NAMES).map(k=>{
+    const s=clamp(100-dims[k].lost,15,100);
+    return {key:k,name:DIM_NAMES[k],score:s,items:dims[k].items};
+  });
+  // 最危险维度的第一条具体原因
+  const worst=[...dimScores].sort((a,b)=>a.score-b.score)[0];
+  const warnPick=worst.items[0]||'暂时侦察不到明显火力点，但也别高兴太早';
+
+  const tier=survive>=85?['稳如老狗','可从容微笑、适当反问']
+            :survive>=60?['有惊无险','重点区域提前背话术']
+            :['深呼吸再上台','建议立刻按功能B补课'];
+  return {survive,dimScores,tier,warnPick,flawCount:flaws.length};
+}
+function renderRisk(res){
+  const colorsOK=res.survive>=85?'var(--ok)':'var(--accent)';
+  const rows=res.dimScores.map((d,i)=>
+    '<div class="dim-row"><div class="dim-main" data-d="'+i+'">'+
+      '<span class="dim-name">'+d.name+'</span>'+
+      '<div class="dim-bar"><div class="dim-fill" data-w="'+d.score+'" style="width:0"></div></div>'+
+      '<span class="dim-score">'+d.score+'</span>'+
+    '</div><ul class="dim-detail">'+(d.items.length?d.items.map(x=>'<li>'+esc(x)+'</li>').join(''):'<li>未见明显异常项</li>')+'</ul></div>'
+  ).join('');
+  $('#outC').innerHTML=
+   '<div class="risk-grid">'+
+     '<div class="gauge-wrap">'+
+       gaugeSVG()+
+       '<div class="tier">'+res.tier[0]+'</div>'+
+       '<p class="tier-sub">'+res.tier[1]+' · 命中隐患 '+res.flawCount+' 处</p>'+
+       '<div class="share-row"><button class="btn btn-primary" id="genCard">生成分享卡片</button></div>'+
+     '</div>'+
+     '<div><div class="dim-list">'+rows+'</div>'+
+     '<p class="hint" style="margin-top:14px">预计发难重点：'+esc(res.warnPick)+'。点击行查看明细。</p></div>'+
+   '</div>';
+
+  // 表盘动画
+  animateGauge(res.survive,colorsOK);
+  // 维度条动画 + 展开
+  requestAnimationFrame(()=>{ setTimeout(()=>{
+    $$('.dim-fill').forEach(f=>f.style.width=f.dataset.w+'%');
+  },150); });
+  res.dimScores.forEach((d,i)=>{
+    $(`[data-d="${i}"]`).addEventListener('click',ev=>{
+      ev.currentTarget.nextElementSibling.classList.toggle('show');
+    });
+  });
+  $('#genCard').addEventListener('click',()=>makeShareCard(res));
+}
+const CIRC=2*Math.PI*88;
+function gaugeSVG(){
+  return '<div class="gauge"><svg width="260" height="260" viewBox="0 0 260 260">'+
+    '<circle cx="130" cy="130" r="88" fill="none" stroke="rgba(236,231,222,.08)" stroke-width="14"/>'+
+    '<circle id="gaugeArc" cx="130" cy="130" r="88" fill="none" stroke="#d9564f" stroke-width="14" stroke-linecap="round" stroke-dasharray="'+CIRC.toFixed(1)+'" stroke-dashoffset="'+CIRC.toFixed(1)+'"/>'+
+    '</svg><div class="gauge-center"><div class="gauge-pct"><span id="gaugeNum">0</span><small>%</small></div><span style="font-size:13px;color:var(--muted)">预计生存率</span></div></div>';
+}
+function animateGauge(target,color){
+  const arc=$('#gaugeArc'), num=$('#gaugeNum');
+  const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  arc.style.stroke=color;
+  if(reduce){ arc.setAttribute('stroke-dashoffset',(CIRC*(1-target/100)).toFixed(1)); num.textContent=target; return; }
+  const t0=performance.now(), dur=1200;
+  function frame(now){
+    const p=clamp((now-t0)/dur,0,1);
+    const e=1-Math.pow(1-p,3);
+    const v=target*e;
+    num.textContent=Math.round(v);
+    arc.setAttribute('stroke-dashoffset',(CIRC*(1-v/100)).toFixed(1));
+    if(p<1) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+$('#btnC').addEventListener('click',()=>{
+  const val=$('#taC').value.trim();
+  const err=$('#errC');
+  if(val.length<15){ err.classList.add('show'); $('#taC').focus(); return; }
+  err.classList.remove('show');
+  renderSkeleton($('#outC'),4);
+  setTimeout(()=>renderRisk(computeRisk(val)),800);
+});
+$$('.demo-c').forEach(b=>b.addEventListener('click',()=>{
+  $('#taC').value='本次汇报介绍本人硕士课题的中期进展。目前完成了文献综述与初步实验设计，在小规模数据上进行了探索性尝试，效果达到预期目标。下一步计划开展更大规模的正式实验并撰写论文初稿。';
+}));
+
+/* ---------- Canvas 分享卡片 ---------- */
+let lastCardURL='';
+function makeShareCard(res){
+  const W=1080,H=1920;
+  const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+  const ctx=cv.getContext('2d');
+
+  // 底色
+  ctx.fillStyle='#161513'; ctx.fillRect(0,0,W,H);
+  // 细边框
+  ctx.strokeStyle='rgba(236,231,222,.2)'; ctx.lineWidth=2;
+  ctx.strokeRect(44,44,W-88,H-88);
+
+  // 品牌
+  ctx.fillStyle='#d9564f'; ctx.fillRect(84,104,20,20);
+  ctx.fillStyle='#ece7de'; ctx.font='600 38px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillText('组会求生舱',118,124);
+  ctx.fillStyle='#9a938a'; ctx.font='26px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillText('今日组会体检报告',84,196);
+
+  // 巨型百分比（抖音竖屏：数字占屏一半）
+  const cx=W/2, cy=760;
+  ctx.textAlign='center';
+  ctx.fillStyle='#ece7de'; ctx.font='900 430px Consolas,ui-monospace,monospace';
+  ctx.fillText(String(res.survive),cx,cy+130);
+  ctx.fillStyle='#d9564f'; ctx.font='800 96px "Songti SC","SimSun",serif';
+  ctx.fillText('%',cx+ (String(res.survive).length>2?300:220),cy+120);
+  ctx.fillStyle='#9a938a'; ctx.font='40px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillText('预计生存率',cx,cy+250);
+
+  // 称号（加大加粗）
+  ctx.fillStyle='#d9564f'; ctx.font='900 92px "Songti SC","SimSun",serif';
+  ctx.fillText(res.tier[0],cx,cy+430);
+  ctx.fillStyle='#9a938a'; ctx.font='34px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillText(res.tier[1],cx,cy+498);
+
+  // 分割线
+  ctx.strokeStyle='rgba(236,231,222,.15)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(140,cy+570); ctx.lineTo(W-140,cy+570); ctx.stroke();
+
+  // 最危险预警
+  ctx.textAlign='center';
+  ctx.fillStyle='#9a938a'; ctx.font='28px sans-serif';
+  ctx.fillText('预计发难重点',cx,cy+648);
+  ctx.fillStyle='#ece7de'; ctx.font='500 40px "PingFang SC","Microsoft YaHei",sans-serif';
+  wrapText(ctx,res.warnPick,cx,cy+720,W-260,56);
+
+  // 底部：二维码占位 + slogan
+  const qy=H-380;
+  ctx.setLineDash([10,8]); ctx.strokeStyle='rgba(236,231,222,.35)'; ctx.lineWidth=2;
+  ctx.strokeRect(120,qy,180,180); ctx.setLineDash([]);
+  ctx.fillStyle='#6f6960'; ctx.font='24px sans-serif';
+  ctx.fillText('贴上你的推广码',210,qy+214);
+  ctx.textAlign='left';
+  ctx.fillStyle='#9a938a'; ctx.font='600 36px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillText('测测你的组会生存率',370,qy+92);
+  ctx.fillStyle='#6f6960'; ctx.font='26px sans-serif';
+  ctx.fillText('黑话变人话 追问早预演',370,qy+146);
+  ctx.textAlign='center';
+  lastCardURL=cv.toDataURL('image/png');
+  $('#shareImg').src=lastCardURL;
+  $('#shareCanvasWrap').style.display='block';
+  $('#shareCanvasWrap').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function wrapText(ctx,text,x,y,maxW,lh){
+  const chars=text.split('');
+  let line='',yy=y;
+  for(const ch of chars){
+    if(ctx.measureText(line+ch).width>maxW){ ctx.fillText(line,x,yy); line=ch; yy+=lh; }
+    else line+=ch;
+  }
+  if(line) ctx.fillText(line,x,yy);
+}
+document.addEventListener('click',e=>{
+  if(e.target.id==='dlCard'&&lastCardURL){
+    const a=document.createElement('a');
+    a.href=lastCardURL; a.download='组会生存卡.png'; a.click();
+  }
+});
+
+/* ---------- 复制按钮绑定 ---------- */
+function bindCopyBtns(scope,fullText){
+  scope.querySelectorAll('.copy-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      if(btn.hasAttribute('data-copy-full')){ copyText(fullText,btn); return; }
+      copyText(decodeURIComponent(btn.getAttribute('data-copy')),btn);
+    });
+  });
+}
+
+/* 顶部导航 平滑降级：锚点跳转后失焦样式可选，无需 JS */
+syncEngineUI();
+</script>
+</body>
+</html>
