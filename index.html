@@ -363,8 +363,8 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
     <button class="engine-badge" id="llmBtn" title="大模型引擎设置"><i class="dot"></i><span id="llmBtnTxt">本地引擎</span></button>
   </div>
   <div class="llm-panel" id="llmPanel">
-    <p class="lp-title">大模型引擎 · DeepSeek-V4-Flash（硅基流动）</p>
-    <p class="lp-sub">Key 只保存在你浏览器 localStorage，页面不内置、不上传。未配置或调用失败时自动回落本地规则引擎。</p>
+    <p class="lp-title">AI 引擎 · DeepSeek-V4-Flash</p>
+    <p class="lp-sub">默认走公共免费额度（经 CF Worker 代理，Key 不在前端，限 60 次/天/IP）。也可粘贴自己的硅基流动 Key 走专属通道，只保存在你浏览器 localStorage。</p>
     <div class="lp-row">
       <input type="password" id="llmKeyInput" placeholder="粘贴 SiliconFlow API Key（sk-…）" autocomplete="off">
       <button class="btn btn-primary" id="llmSave">保存</button>
@@ -745,19 +745,27 @@ $$('.demo-a').forEach(b=>b.addEventListener('click',()=>{
 }));
 
 /* ==================================================================
-   大模型引擎（DeepSeek-V4-Flash @ SiliconFlow，BYOK 直连）
+   大模型引擎（DeepSeek-V4-Flash）
+   优先级：用户自带 Key 直连硅基流动 > 公共 CF Worker 代理（限60次/天/IP）> 本地规则引擎
 ================================================================== */
 const LLM={
   KEY_NAME:'zc_api_key', MODEL:'deepseek-ai/DeepSeek-V4-Flash',
   BASE:'https://api.siliconflow.cn/v1/chat/completions',
+  PROXY:'https://xihuadiyi.huanglihui123456789.workers.dev/api/chat',
   get key(){ try{return localStorage.getItem(this.KEY_NAME)||''}catch(e){return ''} },
-  enabled(){ return this.key.length>20 },
+  hasKey(){ return this.key.length>20 },
+  enabled(){ return true }, /* 公共额度常开；调用失败才回落本地引擎 */
   async chat(messages,maxTokens){
-    const r=await fetch(this.BASE,{method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+this.key},
+    const useKey=this.hasKey();
+    const r=await fetch(useKey?this.BASE:this.PROXY,{method:'POST',
+      headers:useKey?{'Content-Type':'application/json','Authorization':'Bearer '+this.key}
+                    :{'Content-Type':'application/json'},
       body:JSON.stringify({model:this.MODEL,messages,temperature:0.75,max_tokens:maxTokens||900}),
       signal:AbortSignal.timeout(35000)});
-    if(!r.ok) throw new Error('HTTP '+r.status);
+    if(!r.ok){
+      const t=await r.text().catch(()=> '');
+      throw new Error('HTTP '+r.status+(r.status===429?' 今日公共额度已用完':'')+' '+t.slice(0,80));
+    }
     const j=await r.json();
     const t=j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content;
     if(!t) throw new Error('empty');
@@ -771,15 +779,15 @@ const LLM={
   }
 };
 function syncEngineUI(){
-  const on=LLM.enabled();
-  $('#llmBtn').classList.toggle('on',on);
-  $('#llmBtnTxt').textContent=on?'大模型在线':'本地引擎';
-  $('#modeHintA').textContent=on?'大模型转写（DeepSeek-V4-Flash）· 文本将发送至硅基流动':'纯本地分析，不上传任何内容';
+  const on=LLM.hasKey();
+  $('#llmBtn').classList.toggle('on',true);
+  $('#llmBtnTxt').textContent=on?'AI引擎·自带Key':'AI引擎·免费额度';
+  $('#modeHintA').textContent=on?'大模型转写（DeepSeek-V4-Flash）· 文本将发送至硅基流动':'AI 转写已就绪 · 公共免费额度（每IP每日60次）';
 }
 $('#llmBtn').addEventListener('click',e=>{
   e.stopPropagation();
   const p=$('#llmPanel'); p.classList.toggle('open');
-  if(p.classList.contains('open')){ $('#llmKeyInput').value=LLM.key; $('#llmStatus').textContent=LLM.enabled()?'当前状态：已配置，AI 转写与 AI 导师已启用':'当前状态：未配置，运行本地规则引擎'; }
+  if(p.classList.contains('open')){ $('#llmKeyInput').value=LLM.key; $('#llmStatus').textContent=LLM.hasKey()?'当前状态：自带 Key，专属通道':'当前状态：公共免费额度（每IP每日60次）'; }
 });
 document.addEventListener('click',e=>{
   const p=$('#llmPanel');
@@ -794,7 +802,7 @@ $('#llmSave').addEventListener('click',()=>{
 });
 $('#llmClear').addEventListener('click',()=>{
   localStorage.removeItem(LLM.KEY_NAME); $('#llmKeyInput').value='';
-  syncEngineUI(); $('#llmStatus').textContent='已清除，回落本地引擎';
+  syncEngineUI(); $('#llmStatus').textContent='已清除，走公共免费额度';
 });
 
 /* ---------- 功能A：LLM 转写 ---------- */
