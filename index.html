@@ -438,6 +438,33 @@ textarea:focus,input:focus{box-shadow:0 0 0 3px rgba(184,51,42,.1)}
       </div>
     </div>
 
+    <div class="custbox" style="margin-top:18px;border:1px dashed var(--accent-line);border-radius:12px;padding:14px 16px;background:var(--accent-soft)">
+      <details>
+        <summary style="cursor:pointer;font-weight:600;color:var(--accent)">＋ 没有 match 到？自己捏一位「我的导师」 / 导入别人的遭遇码</summary>
+        <div style="margin-top:12px;display:flex;flex-direction:column;gap:10px">
+          <textarea id="taCust" rows="3" placeholder="用几句话画个像：开会迟到十分钟但记性极好；口头禅是“你这个意义上讲”；最恨 PPT 错别字；讲到实验设计会突然兴奋……越具体越像。"></textarea>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <input id="ipTick" placeholder="标志性口头禅（可选）" style="flex:1;min-width:160px">
+            <select id="selAlias">
+              <option value="detail">攻防底色：细节狂魔</option>
+              <option value="macro">宏观战略</option>
+              <option value="aggressive">激进压制</option>
+              <option value="dream" selected>温柔婉拒式（梦中情导）</option>
+              <option value="devil">抬杠反例式</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" id="btnSaveCust" style="align-self:flex-start">保存并选用 ta</button>
+          <p class="hint">⚠ 请勿填写导师真实姓名、院校等可识别信息——只描述风格即可，避免名誉权纠纷。</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:12px">
+            <button class="btn btn-ghost" id="btnGenCode">生成我的遭遇码</button>
+            <button class="btn btn-ghost" id="btnImpCode">粘贴遭遇码，挑战朋友的导师</button>
+            <input id="ipCode" placeholder="粘贴 ZHS. 开头的遭遇码…" style="flex:1;min-width:200px;display:none">
+          </div>
+          <p class="hint">遭遇码是一串字符：把自己的导师画像压缩后发给朋友——ta 粘贴进来就能被你的导师拷问。评论区交换码已成保留节目。</p>
+        </div>
+      </details>
+    </div>
+
     <div style="margin-top:20px">
       <textarea id="taB" rows="7" placeholder="粘贴 PPT 大纲或研究摘要。例：本研究提出一种基于注意力机制的轻量化缺陷检测模型，在工业质检数据集上取得优异表现，证明该方法能显著优于传统方案……"></textarea>
       <div class="row-actions">
@@ -1047,12 +1074,14 @@ function scanFlaws(text){
   return found.sort((a,b)=>b.w-a.w);
 }
 function buildQuestions(text,personaKey){
+  /* 新增/自定义导师通过 alias 借用原型的出题偏好与补充题库 */
+  const pk=(TONE[personaKey]&&TONE[personaKey].alias)||personaKey;
   const hits=scanFlaws(text);
-  const scored=hits.map(d=>({ ...d,score:d.w+(d.boost&&d.boost[personaKey]||0) }));
+  const scored=hits.map(d=>({ ...d,score:d.w+((d.boost&&(d.boost[personaKey]||d.boost[pk]))||0) }));
   scored.sort((a,b)=>b.score-a.score);
   let list=scored.slice(0,5);
   // 不足则按人设补充经典题
-  const fillers=(GENERIC_FILL[personaKey]||[]);
+  const fillers=(GENERIC_FILL[pk]||[]);
   let fi=0;
   while(list.length<5 && fi<fillers.length){
     list.push({...fillers[fi],generic:true});
@@ -1064,12 +1093,13 @@ function buildQuestions(text,personaKey){
 /* ==================================================================
    功能 B 渲染
 ================================================================== */
-$$('.persona').forEach(el=>el.addEventListener('click',()=>{
+$('#personas').addEventListener('click',e=>{
+  const el=e.target.closest('.persona');if(!el)return;
   $$('.persona').forEach(x=>x.classList.remove('on'));
   el.classList.add('on');
   persona=el.dataset.p;
   $('#personaName').textContent=personaNames[persona];
-}));
+});
 /* ---------- 导师语风档案（借鉴开源「导师.skill」人设蒸馏思路） ---------- */
 const TONE={
  detail:{
@@ -1128,6 +1158,164 @@ const TONE={
   ex:['不一定吧。万一类别分布极度失衡呢？你这两个指标当场翻脸。想过了吗。没想过吧。','按规矩，先泼盆冷水——你这结论漂亮是真漂亮，就是一个像样的反例都能把它戳穿。不信？那就试试把它堵上。堵上了算你赢。']
  }
 };
+
+/* ==================================================================
+   导师图鉴扩容（十位名场面原型）+ 自定义导师 + 遭遇码
+   —— 本地引擎的行为池(open/reject/…)与出题偏好通过 alias 借用五原型，
+   AI 模式则完整使用各自的 style/ex 人设 DNA
+================================================================== */
+const _say=m=>(typeof toast==='function')?toast(m):alert(m);
+const NEW_TONES=[
+ {k:'fangyang',n:'放养自灭型',d:'三个月不见人影，一开口就是查进度、追时间线。',q:'“你最近都在忙什么？说给我听听。”',a:'aggressive',
+  s:'平时基本失联，一旦出现就要求立刻汇报全部进度；问话简短居高临下，爱让学生当场回忆时间线："上周做了什么？""为什么卡了三天不找我？"；批评时只丢一句"你自己想想"，然后沉默等你先开口。',
+  x:['哦，回来了？说说，这两个月你都干了什么。挑重点，一分钟。','我不知道你在做什么。这不是我的问题——是你从来没主动汇报过。继续说，我听着。']},
+ {k:'bomb',n:'文献轰炸型',d:'张口就是期刊分区，读不完 twenty 篇别想开题。',q:'“这周先读二十篇，复现其中一篇给我看。”',a:'detail',
+  s:'张口闭口都是文献编号与期刊分区；会当场要求学生比较任意两篇论文的异同，记不清实验设置会被反复敲打；口头禅"第几篇说的？""人家图三是怎么画的？"。',
+  x:['第七篇和第十一篇方法上什么区别？说不出来？回去把两篇的实验设置列个表，再来讲。','人家图三的数据增强方案，你的框架里抄了吗？没抄？那你一半的创新性就悬在那半边，指给我看是哪半。']},
+ {k:'swing',n:'反复横跳型',d:'方向周周变，昨天的结论今天当众推翻。',q:'“我昨晚又想了一下，咱们方向还是得换。”',a:'macro',
+  s:'方向和结论经常推翻重来，审学生时会顺带检验他有没有跟上最新版本的想法；"上次跟你说的作废，现在听我的"是常驻句式；逻辑跳跃快，新念头冒出来就要求学生当场补齐它的致命风险。',
+  x:['上次那个思路别管了。我现在觉得更该做的是这个新角度——对，就它。你说说它最致命的风险在哪，现在就要答。','我变了不要紧，要紧的是你跟没跟上。昨晚的邮件看了吗？看完怎么理解的，说来听听。']},
+ {k:'checkin',n:'打卡查岗型',d:'高频例行检查，问话精确到周，只要增量数字。',q:'“本周比上周，多了什么能写进周报的东西？”',a:'aggressive',
+  s:'像考勤打卡一样按周检查；只关心增量的绝对数值而不是过程中的困难；三句话之内必回到"下一个截止日期是什么时候"，回答浮动一律要求当场定死。',
+  x:['第14周。上周定的三个里程碑，完成度分别多少？直接报百分比，别绕。','别讲苦劳。我就要一句：下周四之前，你能交出什么具体产出？现在白纸黑字定下来。']},
+ {k:'grant',n:'天降大任型',d:'基金标书、横向课题、企业对接全压给学生。',q:'“基金委的标书，周五前搭个初稿框架。”',a:'macro',
+  s:'三句话离不开项目、经费和合作方；会把工程杂活包装成锻炼机会压给学生；谈技术时总绕回"这件事对结题有没有用"，学生的科研兴趣在他眼里是可交换资源。',
+  x:['这个模型好不好不重要。重要的是它能不能写进明年的申报书。评估一下故事性，今天给我结论。','企业那边催中期了，数据部分你接一下——放心，算你二作。干得好，以后这种活都归你。']},
+ {k:'nice',n:'咸鱼老好人型',d:'平时永远"挺好挺好"，答辩前夜一次性爆发。',q:'“挺好挺好，继续加油——等等，这块怎么没做完？”',a:'dream',
+  s:'平时从不给具体修改意见，口头禅是"挺好""没问题""就这样"；但正式评审临近时会突然把积压的所有问题一次倾泻；威胁感来自不可预测的爆发时机与前后巨大反差。',
+  x:['挺好，挺好的。……不过说真的，答辩委员会那位老师很挑剔。你第三章要是被问住怎么办？来，现在就跟我过一遍。','平时看你挺稳，PPT 这块怎么空着？早干嘛去了。——唉算了算了，今晚别睡太晚，明天上台千万别慌。']},
+ {k:'rong',n:'荣誉驱动型',d:'衡量一切的尺子是期刊级别和奖项名头。',q:'“这个做不出顶刊水平，趁早换题。”',a:'devil',
+  s:'对学生工作的第一反应永远是评估"能投哪里、够不够一区"；嘴上强调学术雄心，实则恐慌平庸；惯用同门的成功案例施加横向压力，逼学生论证选题品味。',
+  x:['先回答我：准备投哪？没有目标期刊的研究就像没有目的地的车——开得再猛也是费油。说。','隔壁组的学生去年就中了一区。同样的三年，差的不是脑子，是选题品味。你这个题目，品味体现在哪，说服我。']},
+ {k:'guru',n:'学阀大佬型',d:'开口必提当年辉煌，用资历落差建立压制。',q:'“这条路我九八年就试过。你知道后来为什么放弃吗？”',a:'devil',
+  s:'开场必先回顾自己当年的战绩，用二十年经验落差制造威压；质问学生是否了解领域历史脉络，"年轻人不肯读老论文"是高频指责；决策依赖多年前的直觉并拒绝被当场反驳。',
+  x:['这东西我九六年带第一个博士生时就碰过，走了三个月死胡同。猜猜栽在哪一步？不知道？先把我们组九几年的那批论文翻完再来。','你的问题不在勤奋，在不懂历史脉络。年轻人通病。这个坑前辈们早替你踩过了——说，坑在哪？']},
+ {k:'push',n:'温柔加码型',d:'永远客客气气，任务却一次比一次重。',q:'“状态不错啊？那我再给你加个小实验，没问题吧？”',a:'dream',
+  s:'表达始终体贴周到，但对产能的期望逐次上调从不下调；被拒绝时表现出的失望极其真诚，让学生自我怀疑是否不够努力；人称"推背式温柔"，核心句式是"我相信你可以的，好吗？"',
+  x:['最近状态很好嘛——看来前面加的两个实验也不算负担？那这样，顺便把方差分析也补上？应该不难的对吧。','我知道你已经排满了。但机会总是留给扛得住的人。这周再加一组对照，周日发我就行——相信你，好吗？']},
+ {k:'ghost',n:'阴阳怪气型',d:'夸奖听着像嘲讽，嘲讽裹着礼貌纸。',q:'“哟——这不是我们组的大忙人吗？居然有空做实验？”',a:'devil',
+  s:'全程反讽语调：夸奖自带引号，贬损藏在夸张的礼貌假设里（"哦？""真棒啊？"）；杀伤力靠语调与反差实现，专治学生对自身处境的稳定认知。',
+  x:['哟，稀客啊。太阳打西边出来了，我们的忙碌博士今天有空进实验室了？那正好——还债。欠的三份周报。','真棒啊这个结果。完美。无懈可击。——我不信。同样的话你五月组会讲过一遍。这一版哪里不一样？指出来。']}
+];
+NEW_TONES.forEach(t=>{
+  TONE[t.k]={name:t.n,style:t.s,ex:t.x,alias:t.a};
+  personaNames[t.k]=t.n;
+});
+/* 池借用人格项目所用 | 缺池的人设按 alias 从原型克隆行为池引用 */
+function normTone(){
+  Object.keys(TONE).forEach(k=>{
+    const t=TONE[k];
+    if(t.alias&&!t.open&&TONE[t.alias]){
+      const src=TONE[t.alias];
+      ['open','reject','hollow','accept','weak','finale'].forEach(f=>{if(!t[f])t[f]=src[f];});
+      if(!Array.isArray(t.ex)||!t.ex.length)t.ex=src.ex.slice();
+    }
+  });
+}
+normTone();
+/* 渲染新卡片 */
+(function(){
+  const grid=document.getElementById('personas');if(!grid)return;
+  NEW_TONES.forEach(t=>{
+    const div=document.createElement('div');
+    div.className='persona';div.dataset.p=t.k;
+    div.innerHTML='<h4>'+t.n+'</h4><p>'+t.d+'</p><p class="quote">'+t.q+'</p>';
+    grid.appendChild(div);
+  });
+})();
+
+/* ---------- 自定义「我的导师」 ---------- */
+function ensureCustomCard(){
+  let el=document.getElementById('cardCustom');
+  if(!el){
+    el=document.createElement('div');el.className='persona';el.dataset.p='custom';
+    el.innerHTML='<h4>我的导师</h4><p id="custBrief">未创建</p><p class="quote">“把你描述的样子原样演出来。”</p>';
+    document.getElementById('personas').appendChild(el);
+  }
+  return el;
+}
+function applyCustom(d,tick,alias,select){
+  TONE.custom={
+    name:tick?('「'+tick+'」型'):'自定义导师',
+    style:d+'（整体攻防节奏参考'+TONE[alias].name+'，但以上描述优先级最高）',
+    ex:TONE[alias].ex.slice(0),alias:alias};
+  normTone();
+  personaNames.custom=TONE.custom.name;
+  const c=ensureCustomCard();
+  c.querySelector('#custBrief').textContent=d.length>36?d.slice(0,36)+'…':d;
+  c.querySelector('.quote').textContent=tick?('“'+tick+'”'):'“…（描述见上）”';
+  if(select){
+    persona='custom';
+    $$('.persona').forEach(x=>x.classList.remove('on'));
+    c.classList.add('on');
+    document.getElementById('personaName').textContent=personaNames.custom;
+  }
+}
+$('#btnSaveCust').addEventListener('click',()=>{
+  const d=document.getElementById('taCust').value.trim();
+  if(d.length<10){_say('再多写几句——至少 10 个字，越具体越像真的。');return;}
+  const tick=document.getElementById('ipTick').value.trim();
+  const alias=document.getElementById('selAlias').value;
+  try{localStorage.setItem('zc_custom_mentor',JSON.stringify({d:d,tick:tick,alias:alias}));}catch(e){}
+  applyCustom(d,tick,alias,true);
+  _say('已保存到本机。现在贴入材料，就能接受 ta 的拷问了。');
+});
+(function(){
+  try{
+    const s=localStorage.getItem('zc_custom_mentor');if(!s)return;
+    const j=JSON.parse(s);if(j&&j.d)applyCustom(j.d,j.tick||'',j.alias||'dream',false);
+  }catch(e){}
+})();
+
+/* ---------- 遭遇码：把自己的导师编码成短串，让别人也能测试 ---------- */
+$('#btnGenCode').addEventListener('click',()=>{
+  let payload;
+  if(persona==='custom'){
+    let j={};try{j=JSON.parse(localStorage.getItem('zc_custom_mentor'))||{};}catch(e){}
+    payload={v:1,k:j.alias||'dream',n:personaNames.custom,
+      s:(j.d||'')+(j.tick?('｜口头禅：'+j.tick):''),x:TONE.custom.ex.slice(0,2)};
+  }else{
+    const t=TONE[persona]||TONE.detail;
+    payload={v:1,k:t.alias||persona,n:t.name,s:t.style,x:t.ex.slice(0,2)};
+  }
+  let code='';
+  try{code='ZHS.'+btoa(unescape(encodeURIComponent(JSON.stringify(payload))));}
+  catch(e){_say('生成失败，换个简短的描述再试。');return;}
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(code).then(()=>_say('遭遇码已复制！发到评论区或群里，邀请大家挑战。'),()=>prompt('手动复制遭遇码：',code));
+  }else prompt('手动复制遭遇码：',code);
+});
+$('#btnImpCode').addEventListener('click',()=>{
+  const ip=document.getElementById('ipCode');
+  if(ip.style.display==='none'){ip.style.display='block';ip.focus();return;}
+  const raw=ip.value.trim().replace(/^ZHS\./,'');
+  if(!raw){ip.style.display='none';return;}
+  try{
+    const p=JSON.parse(decodeURIComponent(escape(atob(raw))));
+    if(p.v!==1||!p.k||!TONE[p.k])throw new Error('bad');
+    const base=TONE[p.k];
+    TONE.shared={
+      name:(p.n||base.name)+' · 遭遇版',
+      style:p.s||base.style,
+      ex:(p.x&&p.x.length?p.x:base.ex),
+      alias:p.k};
+    normTone();
+    personaNames.shared=TONE.shared.name;
+    let el=document.getElementById('cardShared');
+    if(!el){
+      el=document.createElement('div');el.className='persona';el.dataset.p='shared';
+      el.innerHTML='<h4>朋友的导师</h4><p id="shBrief"></p><p class="quote">“敢不敢试试？”</p>';
+      document.getElementById('personas').appendChild(el);
+    }
+    el.querySelector('#shBrief').textContent=(TONE.shared.style).slice(0,34)+'…';
+    persona='shared';
+    $$('.persona').forEach(x=>x.classList.remove('on'));
+    el.classList.add('on');
+    document.getElementById('personaName').textContent=personaNames.shared;
+    ip.value='';ip.style.display='none';
+    _say('遭遇码装载完成：「'+personaNames.shared+'」已进入待命状态。贴入材料即可开战。');
+  }catch(e){_say('遭遇码无效或已损坏，请检查是否复制完整。');}
+});
 /* 三轮递进弹药：r1 用检测器/通用题库原题，r2/r3 按漏洞类型定制 */
 const PRESS={
  sample:{r2:'我没听到数。n 到底多少、哪一批、凭什么够用？三件事一口气说完。',
@@ -1224,7 +1412,9 @@ function roundText(q){
   if(chat.round===1) return (q.fq)||((PRESS[q.id]||GENERIC_PRESS).r2);
   if(chat.round===2){
     const p=PRESS[q.id];
-    return p?p.r3:FINAL_TPL[persona](q.essence);
+    if(p) return p.r3;
+    const tpl=FINAL_TPL[persona]||FINAL_TPL[(TONE[persona]&&TONE[persona].alias)||'detail'];
+    return tpl(q.essence);
   }
   return null;
 }
