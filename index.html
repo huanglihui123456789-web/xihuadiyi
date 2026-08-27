@@ -748,7 +748,7 @@ const LLM={
   async chat(messages,maxTokens){
     const r=await fetch(this.BASE,{method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+this.key},
-      body:JSON.stringify({model:this.MODEL,messages,temperature:(arguments[2]!==undefined?arguments[2]:0.78),max_tokens:maxTokens||900}),
+      body:JSON.stringify({model:this.MODEL,messages,temperature:(arguments[2]!==undefined?arguments[2]:0.9),max_tokens:maxTokens||900}),
       signal:AbortSignal.timeout(35000)});
     if(!r.ok) throw new Error('HTTP '+r.status);
     const j=await r.json();
@@ -770,7 +770,7 @@ function syncEngineUI(){
 
 /* ---------- 功能A：LLM 转写 ---------- */
 async function llmGenSpeech(text){
-  const sys='你是学术汇报口语教练。输入是一段论文正文/实验结论。输出严格JSON：{"domain":"机器学习|医学实验|材料化学|经济金融|社科问卷|通用之一","hook":"一句包含贴切现实比喻的大白话核心结论(40字内)","script":["恰好3句口头逐字稿"],"tips":"一行贴PPT建议"}。script要求：①拆解原文所有长句、公式符号转口语(如p<0.01说成"显著性极强")；②每句嵌入自然过渡词("大家注意看这里…""我们最初预期是X,但实际…"等)；③在句中合适位置插入节奏标签[停顿1s]/[加重语气]/[手指PPT曲线]/[放慢语速]，保留在字符串里；④禁止出现书面语连接词"此外/综上所述"。';
+  const sys='你是学术汇报口语教练，风格：像一位特别会把论文讲成段子的学长在帮学弟备稿。输入是一段论文正文/实验结论。输出严格JSON（仅键名和格式不可变，内容尽情发挥）：{"domain":"机器学习|医学实验|材料化学|经济金融|社科问卷|通用之一","hook":"一句大白话核心结论，带一个鲜活贴切的现实比喻","script":["3句口头逐字稿"],"tips":"一行贴PPT建议"}。创作要求：①长句拆碎、公式符号转口语(如p<0.01说成"显著性极强")；②语言越像真人说话越好，自然带过渡词、留悬念、先抑后扬都可以；③在合适位置插入节奏标签[停顿1s]/[加重语气]/[手指PPT曲线]/[放慢语速]；④比喻欢迎接地气甚至好笑，只要贴切；别怕口语化过头。';
   const j=await LLM.chatJSON([{role:'system',content:sys},{role:'user',content:text}],1100);
   if(!j.hook||!Array.isArray(j.script)||j.script.length<3) throw new Error('bad shape');
   const tagRe=/\[(停顿 ?1s?|加重语气|手指 ?PPT(?:曲线)?|放慢语速)\]/g;
@@ -790,7 +790,7 @@ function clipBlockHTML(){
 }
 async function llmClip(){
   const a=_lastA;
-  const j=await LLM.chatJSON([{role:'system',content:'你是15秒学术短视频编导。输入是一段论文的大白话转写（含一句话抓人结论）。输出严格JSON：{"hook":"0-3秒开场钩子，一句制造冲突/悬念的话，≤22字","body":"3-12秒核心内容，把大白话进一步口语化，2句以内","cta":"12-15秒结尾引导（点工具名并引导评论区），≤20字","tags":"4-6个抖音话题标签空格分隔"}。禁止书面语。'},{role:'user',content:'一句话抓人：'+a.hookPlain+'\n逐字稿要点：'+a.plainText.slice(0,300)}],500);
+  const j=await LLM.chatJSON([{role:'system',content:'你是15秒学术短视频编导，擅长把冷知识讲得让人停下滑动。输入是论文的大白话转写。输出严格JSON（键名不可变，内容放开写）：{"hook":"0-3秒开场钩子，制造冲突/悬念/反差的话，越抓人越好","body":"3-12秒核心内容，进一步口语化，2句以内","cta":"12-15秒结尾引导（提到工具名+引导互动），口语化","tags":"4-6个抖音话题标签空格分隔"}。像脱口秀编剧一样打磨节奏。'},{role:'user',content:'一句话抓人：'+a.hookPlain+'\n逐字稿要点：'+a.plainText.slice(0,300)}],600);
   if(!j.hook||!j.body||!j.cta||!j.tags) throw new Error('bad shape');
   return '【0-3秒】'+j.hook+'\n【3-12秒】'+j.body+'\n【12-15秒】'+j.cta+'\n\n'+j.tags;
 }
@@ -1209,11 +1209,11 @@ async function advanceTopic(){
   if(LLM.enabled()){
     try{
       const asked=chat.tally.map(t=>'「'+t.essence+'」'+(t.pass?'(已攻破)':'')).join('、');
-      const sys='你是研究生导师（'+TONE[persona].name+'），正对学生的汇报材料连续发难。学生材料：「'+chat.material.slice(0,700)+'」。你的说话风格——'+TONE[persona].style+'\n可用的攻击轴：数据层/方法与实验设计/论证链/工程可行性/学术表达。已考察过的主题：'+asked+'。请挑选一个尚未追问过的死角发起新拷问；若主要问题都已考察完毕、确实没什么可再问的了，才允许收尾。输出严格JSON之一：{"finish":true} 或 {"essence":"≤12字发难本质","question":"完整的导师质问，60字内"}';
-      const j=await LLM.chatJSON([{role:'system',content:sys},{role:'user',content:'出下一题或收尾。'}],400);
+      const sys='你是研究生导师（'+TONE[persona].name+'），正对学生的汇报材料连续发难。学生材料：「'+chat.material.slice(0,700)+'」。你的说话风格——'+TONE[persona].style+'\n可用的攻击轴：数据层/方法与实验设计/论证链/工程可行性/学术表达。已考察过的主题：'+asked+'。请挑一个尚未追问过的死角，像真实谈话一样抛出新的质问（可以引用材料细节、可以用反问、可以带语气词）；只有当主要死角确实问尽了，才允许收尾。输出严格JSON之一：{"finish":true} 或 {"essence":"≤12字发难本质","question":"完整的导师质问，30~150字，鲜活口语"}';
+      const j=await LLM.chatJSON([{role:'system',content:sys},{role:'user',content:'出下一题或收尾。'}],500);
       if(j.finish===true){ finishChat('auto'); return; }
       if(j.question&&j.essence){
-        const q={id:'free',generic:true,q:String(j.question).slice(0,120),essence:String(j.essence).slice(0,16),
+        const q={id:'free',generic:true,q:String(j.question).slice(0,220),essence:String(j.essence).slice(0,16),
           defense:['您指出的这个点我确实还没想透。','目前的处理方式是……（如实说明）。','我会补做相关论证，下次组会给出结论。']};
         chat.qs.push(q); chat.tally.push({essence:q.essence,rounds:0,pass:false});
         chat.qi=chat.qs.length-1; chat.busy=false;
