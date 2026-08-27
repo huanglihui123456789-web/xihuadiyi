@@ -3,22 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#f7f3ea">
 <title>组会求生舱 · 把论文黑话变人话</title>
 <style>
 /* ============ 设计令牌 ============ */
 :root{
-  --bg:#161513;
-  --panel:#1d1b18;
-  --panel-2:#232019;
-  --line:rgba(236,231,222,.10);
-  --line-strong:rgba(236,231,222,.18);
-  --text:#ece7de;
-  --muted:#9a938a;
-  --faint:#6f6960;
-  --accent:#d9564f;
-  --accent-soft:rgba(217,86,79,.12);
-  --accent-line:rgba(217,86,79,.45);
-  --ok:#7aa874;
+  --bg:#f7f3ea;
+  --panel:#fdfbf5;
+  --panel-2:#f0eadc;
+  --line:rgba(33,28,21,.10);
+  --line-strong:rgba(33,28,21,.22);
+  --text:#221d15;
+  --muted:#6e6659;
+  --faint:#9a9083;
+  --accent:#b8332a;
+  --accent-soft:rgba(184,51,42,.08);
+  --accent-line:rgba(184,51,42,.42);
+  --ok:#3e7a44;
   --radius:12px;
   --serif:"Noto Serif SC","Source Han Serif SC","Songti SC",SimSun,serif;
   --sans:"PingFang SC","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;
@@ -40,7 +41,8 @@ body{
 nav{
   position:sticky;top:0;z-index:50;height:64px;
   border-bottom:1px solid var(--line);
-  background:rgba(22,21,19,.86);backdrop-filter:blur(12px);
+  background:rgba(247,243,234,.88);backdrop-filter:blur(12px);
+  box-shadow:0 1px 0 rgba(33,28,21,.04);
 }
 .nav-inner{max-width:1080px;margin:0 auto;padding:0 24px;height:64px;display:flex;align-items:center;justify-content:space-between}
 .brand{font-family:var(--serif);font-size:18px;font-weight:700;letter-spacing:.06em;color:var(--text);text-decoration:none;display:flex;align-items:center;gap:10px}
@@ -73,7 +75,7 @@ nav{
 }
 .btn:active{transform:translateY(1px) scale(.985)}
 .btn-primary{background:var(--accent);color:#fff;border:1px solid transparent;font-weight:600}
-.btn-primary:hover{background:#c24740}
+.btn-primary:hover{background:#9e2b23}
 .btn-ghost{background:transparent;color:var(--text);border:1px solid var(--line-strong)}
 .btn-ghost:hover{border-color:var(--accent-line);color:var(--accent)}
 
@@ -103,13 +105,13 @@ textarea::placeholder{color:var(--faint)}
 .paper{
   position:relative;margin-top:26px;border:1px solid var(--line-strong);border-radius:var(--radius);
   background:
-    repeating-linear-gradient(to bottom,transparent 0 33px,rgba(236,231,222,.05) 33px 34px),
+    repeating-linear-gradient(to bottom,transparent 0 33px,rgba(33,28,21,.05) 33px 34px),
     var(--panel);
   overflow:hidden;
 }
 .paper::before{
   content:"";position:absolute;left:44px;top:0;bottom:0;width:1px;
-  background:rgba(217,86,79,.28);
+  background:rgba(184,51,42,.35);
 }
 .paper-inner{padding:26px 26px 26px 66px}
 @media(max-width:640px){.paper::before{left:26px}.paper-inner{padding-left:46px}}
@@ -146,7 +148,7 @@ body.plain .beat{display:none}
 /* 骨架态 */
 .skeleton .skl{
   height:16px;border-radius:6px;margin-bottom:14px;
-  background:linear-gradient(90deg,rgba(236,231,222,.05) 25%,rgba(236,231,222,.12) 45%,rgba(236,231,222,.05) 65%);
+  background:linear-gradient(90deg,rgba(33,28,21,.05) 25%,rgba(33,28,21,.11) 45%,rgba(33,28,21,.05) 65%);
   background-size:280% 100%;animation:shimmer 1.1s infinite linear;
 }
 @keyframes shimmer{to{background-position:-180% 0}}
@@ -227,7 +229,7 @@ body.plain .beat{display:none}
   display:flex;align-items:center;gap:16px;padding:15px 4px;cursor:pointer;
 }
 .dim-name{width:96px;flex-shrink:0;font-size:15px}
-.dim-bar{flex:1;height:5px;border-radius:99px;background:rgba(236,231,222,.08);overflow:hidden}
+.dim-bar{flex:1;height:5px;border-radius:99px;background:rgba(33,28,21,.08);overflow:hidden}
 .dim-fill{height:100%;border-radius:99px;background:var(--accent);width:0;transition:width .9s cubic-bezier(.16,1,.3,1)}
 @media (prefers-reduced-motion:reduce){.dim-fill{transition:none}}
 .dim-score{font-family:var(--mono);font-size:13px;color:var(--muted);width:48px;text-align:right}
@@ -246,16 +248,16 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
 .chat-shell{
   margin-top:26px;border:1px solid var(--line-strong);border-radius:var(--radius);
   background:
-    repeating-linear-gradient(to bottom,transparent 0 33px,rgba(236,231,222,.04) 33px 34px),
+    repeating-linear-gradient(to bottom,transparent 0 33px,rgba(33,28,21,.04) 33px 34px),
     var(--panel);
   overflow:hidden;
 }
 .chat-progress{
   display:flex;align-items:center;gap:14px;padding:12px 18px;
-  border-bottom:1px solid var(--line);background:rgba(217,86,79,.05);
+  border-bottom:1px solid var(--line);background:rgba(184,51,42,.05);
 }
 .chat-progress .cp-label{font-family:var(--mono);font-size:12px;letter-spacing:.1em;color:var(--accent);white-space:nowrap}
-.cp-track{flex:1;height:5px;border-radius:99px;background:rgba(236,231,222,.08);overflow:hidden}
+.cp-track{flex:1;height:5px;border-radius:99px;background:rgba(33,28,21,.08);overflow:hidden}
 .cp-fill{height:100%;border-radius:99px;background:var(--accent);width:0;transition:width .5s cubic-bezier(.16,1,.3,1)}
 @media (prefers-reduced-motion:reduce){.cp-fill{transition:none}}
 
@@ -266,7 +268,7 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
   background:var(--panel-2);color:var(--text);
   border-top-left-radius:4px;font-family:var(--serif);
 }
-.bub-me{align-self:flex-end;background:rgba(236,231,222,.09);border-top-right-radius:4px;white-space:pre-wrap}
+.bub-me{align-self:flex-end;background:rgba(33,28,21,.07);border-top-right-radius:4px;white-space:pre-wrap}
 .bub-meta{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.08em;margin-bottom:5px}
 .bub-tutor .bub-meta{color:var(--accent)}
 .bub-tag{
@@ -309,7 +311,7 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
 }
 .toast.show{transform:translateX(-50%);opacity:1}
 .clip-wrap{display:flex;flex-direction:column;gap:8px}
-.clip-out{white-space:pre-wrap;background:rgba(236,231,222,.04);border:1px dashed var(--line-strong);border-radius:var(--radius);padding:14px 16px;font-size:14.5px;line-height:1.8;color:var(--text);margin:0}
+.clip-out{white-space:pre-wrap;background:rgba(33,28,21,.04);border:1px dashed var(--line-strong);border-radius:var(--radius);padding:14px 16px;font-size:14.5px;line-height:1.8;color:var(--text);margin:0}
 /* ---------- 移动端适配（置于末尾保证覆盖） ---------- */
 @media(max-width:640px){
   .wrap{padding:0 16px}
@@ -332,18 +334,18 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
 html{scroll-behavior:smooth}
 body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 ::-webkit-scrollbar{width:10px;height:10px}
-::-webkit-scrollbar-thumb{background:#33302b;border-radius:99px;border:2px solid var(--bg)}
-::-webkit-scrollbar-thumb:hover{background:#4a463f}
+::-webkit-scrollbar-thumb{background:#d5ccbb;border-radius:99px;border:2px solid var(--bg)}
+::-webkit-scrollbar-thumb:hover{background:#bfb49e}
 ::-webkit-scrollbar-track{background:transparent}
 :focus-visible{outline:2px solid var(--accent-line);outline-offset:2px;border-radius:4px}
 .btn{transition:transform .16s ease,box-shadow .2s ease,background .2s ease,border-color .2s,color .2s}
-.btn-primary{box-shadow:0 1px 0 rgba(255,255,255,.12) inset,0 4px 14px rgba(217,86,79,.22)}
-.btn-primary:hover{transform:translateY(-1px);box-shadow:0 1px 0 rgba(255,255,255,.14) inset,0 8px 22px rgba(217,86,79,.3)}
+.btn-primary{box-shadow:0 4px 14px rgba(184,51,42,.2)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(184,51,42,.28)}
 .btn-primary:active{transform:translateY(0)}
 textarea,input[type=text]{transition:border-color .2s,box-shadow .2s}
-textarea:hover,input[type=text]:hover{border-color:#4a463f}
-textarea:focus,input:focus{box-shadow:0 0 0 3px rgba(217,86,79,.09)}
-.paper{box-shadow:0 18px 50px rgba(0,0,0,.35)}
+textarea:hover,input[type=text]:hover{border-color:#c9bfa9}
+textarea:focus,input:focus{box-shadow:0 0 0 3px rgba(184,51,42,.1)}
+.paper{box-shadow:0 14px 40px rgba(58,42,26,.12)}
 .paper-inner{max-width:62em}
 .fn-head h2{letter-spacing:.01em}
 .engine-badge{display:none}
@@ -746,7 +748,7 @@ const LLM={
   async chat(messages,maxTokens){
     const r=await fetch(this.BASE,{method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+this.key},
-      body:JSON.stringify({model:this.MODEL,messages,temperature:0.75,max_tokens:maxTokens||900}),
+      body:JSON.stringify({model:this.MODEL,messages,temperature:(arguments[2]!==undefined?arguments[2]:0.78),max_tokens:maxTokens||900}),
       signal:AbortSignal.timeout(35000)});
     if(!r.ok) throw new Error('HTTP '+r.status);
     const j=await r.json();
@@ -754,8 +756,8 @@ const LLM={
     if(!t) throw new Error('empty');
     return t;
   },
-  async chatJSON(messages,maxTokens){
-    const t=await this.chat(messages,maxTokens||900);
+  async chatJSON(messages,maxTokens,temp){
+    const t=await this.chat(messages,maxTokens||900,temp);
     const m=t.match(/\{[\s\S]*\}/);
     if(!m) throw new Error('no json');
     return JSON.parse(m[0]);
@@ -822,12 +824,12 @@ document.addEventListener('click',async e=>{
 async function llmTutorTurn(q,userAns,historyArr){
   const tone=TONE[persona];
   const axes='你有五个攻击轴可轮换：①数据层（样本、口径、统计效力）②方法与实验设计（对照、消融、baseline 选择依据）③论证链（前提→推理跳跃→结论，哪一步没守住）④工程可行性（成本、部署、规模化）⑤学术表达（概念混用、文献定位、表述过强）。不要总打同一个轴。';
-  const sys='你在一个"导师夺命连环问模拟器"里扮演'+tone.name+'的研究生导师，无限追问模式：学生回答不够硬就一直追同一主题，绝无次数上限，直到你判断 pass。学生材料：「'+chat.material.slice(0,600)+'」。当前主题：「'+q.essence+'」，该主题第'+(chat.round+2)+'回合。'+axes+'\n你的说话风格必须严格遵守——'+tone.style+'\n风格示例——开场：'+tone.open[0]+' 驳回空话：'+tone.reject[0]+' 放行：'+tone.accept[0]+'。\n判定标准：pass=true 仅当学生回答含具体数字/数据来源/明确期限承诺/主动承认局限并给出补救之一且有实质内容；空洞表态（如"我会努力改进的"）、答非所问、复读问题、明显胡编 → pass=false。回复要求：①≤70字中文口语，第二人称；②优先引用学生材料或其原话里的细节反击（「你自己刚说过……」「你材料第X部分写的……」）；③不许出戏、不解释规则。输出严格JSON：{"pass":true/false,"reply":"导师的话"}';
-  const hist=historyArr.slice(-4).map(h=>h.role==='tutor'?'导师：'+h.text:'学生：'+h.text).join('\n');
+  const sys='你在一个"导师夺命连环问模拟器"里扮演'+tone.name+'的资深研究生导师，正在自己办公室和学生单独谈话。请把自己当成活人：有脾气、有口头禅、会哼笑一声、会用反问句和停顿施压。无限追问模式：学生回答不够硬就一直追同一主题，直到你判断 pass。学生材料：「'+chat.material.slice(0,600)+'」。当前主题：「'+q.essence+'」，该主题第'+(chat.round+2)+'回合。'+axes+'\n人设基调：'+tone.style+'\n说话铁律：①像真人聊天，禁止"首先/其次/综上"、禁止干巴巴的一句话点评；②可以用1~3个短句层层逼近，带语气词（嗯、哦、啧、呵）；③优先抓学生材料或其刚说的话里的具体细节反击，比如「你材料第三行写的 91.2%？误差棒呢？」「你刚才自己说要补实验，补什么？什么时候？」；④允许温和或凶狠由你的性格决定，但不许出戏解释规则。\n判定标准：pass=true 仅当回答里有真东西——具体数字/数据来源/明确期限的行动承诺/主动承认局限并给出补救；空洞表态（努力改进型）、答非所问、复读我的问题、明显胡编 → pass=false。\n输出严格JSON：{"pass":true/false,"reply":"导师的话，60~150字，鲜活口语"}';
+  const hist=historyArr.slice(-6).map(h=>h.role==='tutor'?'导师：'+h.text:'学生：'+h.text).join('\n');
   const user=hist+'\n学生最新回答：'+userAns+'\n输出JSON。';
-  const j=await LLM.chatJSON([{role:'system',content:sys},{role:'user',content:user}],400);
+  const j=await LLM.chatJSON([{role:'system',content:sys},{role:'user',content:user}],500,0.92);
   if(typeof j.pass!=='boolean'||!j.reply) throw new Error('bad shape');
-  return {pass:j.pass,reply:String(j.reply).slice(0,160)};
+  return {pass:j.pass,reply:String(j.reply).slice(0,240)};
 }
 
 /* dim: 数据可信度 data / 方法严谨性 method / 故事逻辑 logic / 局限意识 limit / 临场防御 defense */
@@ -1482,8 +1484,8 @@ function renderRisk(res){
 const CIRC=2*Math.PI*88;
 function gaugeSVG(){
   return '<div class="gauge"><svg width="260" height="260" viewBox="0 0 260 260">'+
-    '<circle cx="130" cy="130" r="88" fill="none" stroke="rgba(236,231,222,.08)" stroke-width="14"/>'+
-    '<circle id="gaugeArc" cx="130" cy="130" r="88" fill="none" stroke="#d9564f" stroke-width="14" stroke-linecap="round" stroke-dasharray="'+CIRC.toFixed(1)+'" stroke-dashoffset="'+CIRC.toFixed(1)+'"/>'+
+    '<circle cx="130" cy="130" r="88" fill="none" stroke="rgba(33,28,21,.08)" stroke-width="14"/>'+
+    '<circle id="gaugeArc" cx="130" cy="130" r="88" fill="none" stroke="#b8332a" stroke-width="14" stroke-linecap="round" stroke-dasharray="'+CIRC.toFixed(1)+'" stroke-dashoffset="'+CIRC.toFixed(1)+'"/>'+
     '</svg><div class="gauge-center"><div class="gauge-pct"><span id="gaugeNum">0</span><small>%</small></div><span style="font-size:13px;color:var(--muted)">预计生存率</span></div></div>';
 }
 function animateGauge(target,color){
@@ -1521,56 +1523,56 @@ function makeShareCard(res){
   const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
   const ctx=cv.getContext('2d');
 
-  // 底色
-  ctx.fillStyle='#161513'; ctx.fillRect(0,0,W,H);
+  // 底色（米白期刊纸）
+  ctx.fillStyle='#f7f3ea'; ctx.fillRect(0,0,W,H);
   // 细边框
-  ctx.strokeStyle='rgba(236,231,222,.2)'; ctx.lineWidth=2;
+  ctx.strokeStyle='rgba(33,28,21,.25)'; ctx.lineWidth=2;
   ctx.strokeRect(44,44,W-88,H-88);
 
   // 品牌
-  ctx.fillStyle='#d9564f'; ctx.fillRect(84,104,20,20);
-  ctx.fillStyle='#ece7de'; ctx.font='600 38px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillStyle='#b8332a'; ctx.fillRect(84,104,20,20);
+  ctx.fillStyle='#221d15'; ctx.font='600 38px "PingFang SC","Microsoft YaHei",sans-serif';
   ctx.fillText('组会求生舱',118,124);
-  ctx.fillStyle='#9a938a'; ctx.font='26px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillStyle='#6e6659'; ctx.font='26px "PingFang SC","Microsoft YaHei",sans-serif';
   ctx.fillText('今日组会体检报告',84,196);
 
   // 巨型百分比（抖音竖屏：数字占屏一半）
   const cx=W/2, cy=760;
   ctx.textAlign='center';
-  ctx.fillStyle='#ece7de'; ctx.font='900 430px Consolas,ui-monospace,monospace';
+  ctx.fillStyle='#221d15'; ctx.font='900 430px Consolas,ui-monospace,monospace';
   ctx.fillText(String(res.survive),cx,cy+130);
-  ctx.fillStyle='#d9564f'; ctx.font='800 96px "Songti SC","SimSun",serif';
+  ctx.fillStyle='#b8332a'; ctx.font='800 96px "Songti SC","SimSun",serif';
   ctx.fillText('%',cx+ (String(res.survive).length>2?300:220),cy+120);
-  ctx.fillStyle='#9a938a'; ctx.font='40px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillStyle='#6e6659'; ctx.font='40px "PingFang SC","Microsoft YaHei",sans-serif';
   ctx.fillText('预计生存率',cx,cy+250);
 
   // 称号（加大加粗）
-  ctx.fillStyle='#d9564f'; ctx.font='900 92px "Songti SC","SimSun",serif';
+  ctx.fillStyle='#b8332a'; ctx.font='900 92px "Songti SC","SimSun",serif';
   ctx.fillText(res.tier[0],cx,cy+430);
-  ctx.fillStyle='#9a938a'; ctx.font='34px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillStyle='#6e6659'; ctx.font='34px "PingFang SC","Microsoft YaHei",sans-serif';
   ctx.fillText(res.tier[1],cx,cy+498);
 
   // 分割线
-  ctx.strokeStyle='rgba(236,231,222,.15)'; ctx.lineWidth=1;
+  ctx.strokeStyle='rgba(33,28,21,.18)'; ctx.lineWidth=1;
   ctx.beginPath(); ctx.moveTo(140,cy+570); ctx.lineTo(W-140,cy+570); ctx.stroke();
 
   // 最危险预警
   ctx.textAlign='center';
-  ctx.fillStyle='#9a938a'; ctx.font='28px sans-serif';
+  ctx.fillStyle='#6e6659'; ctx.font='28px sans-serif';
   ctx.fillText('预计发难重点',cx,cy+648);
-  ctx.fillStyle='#ece7de'; ctx.font='500 40px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillStyle='#221d15'; ctx.font='500 40px "PingFang SC","Microsoft YaHei",sans-serif';
   wrapText(ctx,res.warnPick,cx,cy+720,W-260,56);
 
   // 底部：二维码占位 + slogan
   const qy=H-380;
-  ctx.setLineDash([10,8]); ctx.strokeStyle='rgba(236,231,222,.35)'; ctx.lineWidth=2;
+  ctx.setLineDash([10,8]); ctx.strokeStyle='rgba(33,28,21,.4)'; ctx.lineWidth=2;
   ctx.strokeRect(120,qy,180,180); ctx.setLineDash([]);
-  ctx.fillStyle='#6f6960'; ctx.font='24px sans-serif';
+  ctx.fillStyle='#9a9083'; ctx.font='24px sans-serif';
   ctx.fillText('贴上你的推广码',210,qy+214);
   ctx.textAlign='left';
-  ctx.fillStyle='#9a938a'; ctx.font='600 36px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillStyle='#221d15'; ctx.font='600 36px "PingFang SC","Microsoft YaHei",sans-serif';
   ctx.fillText('测测你的组会生存率',370,qy+92);
-  ctx.fillStyle='#6f6960'; ctx.font='26px sans-serif';
+  ctx.fillStyle='#6e6659'; ctx.font='26px sans-serif';
   ctx.fillText('黑话变人话 追问早预演',370,qy+146);
   ctx.textAlign='center';
   lastCardURL=cv.toDataURL('image/png');
