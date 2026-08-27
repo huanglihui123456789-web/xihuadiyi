@@ -298,26 +298,7 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
 .rp-cap{font-size:12px;color:var(--faint);margin-top:2px}
 .rp-verdict{border-left:3px solid var(--accent);background:var(--accent-soft);padding:12px 16px;border-radius:0 8px 8px 0;font-size:14.5px;margin:10px 0 18px}
 
-/* ============ 引擎设置 ============ */
-.engine-badge{
-  display:flex;align-items:center;gap:7px;margin-left:18px;
-  background:transparent;border:1px solid var(--line-strong);border-radius:999px;
-  color:var(--muted);font-size:12px;font-family:var(--mono);padding:5px 12px;cursor:pointer;
-}
-.engine-badge .dot{width:7px;height:7px;border-radius:50%;background:#6b6b6b}
-.engine-badge.on{color:var(--accent);border-color:var(--accent-line)}
-.engine-badge.on .dot{background:var(--accent);box-shadow:none}
-.llm-panel{
-  display:none;position:absolute;right:0;top:calc(100% + 10px);z-index:60;
-  width:min(420px,92vw);background:var(--panel-2);border:1px solid var(--line-strong);
-  border-radius:var(--radius);padding:18px 20px;box-shadow:0 14px 40px rgba(0,0,0,.45);
-}
-.llm-panel.open{display:block}
-.lp-title{font-family:var(--mono);font-size:13px;color:var(--text);margin-bottom:6px}
-.lp-sub{font-size:12.5px;color:var(--faint);line-height:1.6;margin-bottom:12px}
-.lp-row{display:flex;gap:8px}
-.lp-row input{flex:1}
-.lp-status{font-size:12px;color:var(--muted);margin-top:8px;min-height:1em}
+/* ============ （设置入口已隐藏：API 纯后台运行） ============ */
 
 /* toast */
 .toast{
@@ -343,7 +324,6 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
   .chat-input .pocket-btn,.chat-input .giveup-btn,.chat-input .send-btn{flex:1;padding:10px 8px}
   .script-line{font-size:14.5px}
   .tag-beat{white-space:normal}
-  .lp-row{flex-wrap:wrap}
   .nav-links{gap:10px}
   footer .wrap{justify-content:center;text-align:center}
   #shareCanvasWrap img{height:auto;width:min(82vw,320px)}
@@ -366,9 +346,7 @@ textarea:focus,input:focus{box-shadow:0 0 0 3px rgba(217,86,79,.09)}
 .paper{box-shadow:0 18px 50px rgba(0,0,0,.35)}
 .paper-inner{max-width:62em}
 .fn-head h2{letter-spacing:.01em}
-.engine-badge{width:32px;height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center;margin-left:auto;transition:border-color .2s,color .2s,transform .2s}
-.engine-badge:hover{color:var(--accent);border-color:var(--accent-line);transform:rotate(18deg)}
-@media(max-width:760px){.engine-badge{margin-left:auto}}
+.engine-badge{display:none}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -382,17 +360,6 @@ textarea:focus,input:focus{box-shadow:0 0 0 3px rgba(217,86,79,.09)}
       <a href="#f-b">夺命连环问</a>
       <a href="#f-c">生存指数</a>
     </div>
-    <button class="engine-badge" id="llmBtn" title="AI 引擎设置" aria-label="AI 引擎设置"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
-  </div>
-  <div class="llm-panel" id="llmPanel">
-    <p class="lp-title">AI 引擎设置</p>
-    <p class="lp-sub">已内置公共 Key，AI 功能开箱即用；调用失败自动回落本地规则引擎。也可粘贴你自己的 SiliconFlow Key 获得专属通道，仅保存在本浏览器。</p>
-    <div class="lp-row">
-      <input type="password" id="llmKeyInput" placeholder="粘贴 SiliconFlow API Key（sk-…）" autocomplete="off">
-      <button class="btn btn-primary" id="llmSave">保存</button>
-      <button class="btn btn-ghost" id="llmClear">清除</button>
-    </div>
-    <p class="lp-status" id="llmStatus"></p>
   </div>
 </nav>
 
@@ -795,29 +762,9 @@ const LLM={
   }
 };
 function syncEngineUI(){
-  $('#llmBtn').classList.add('on');
-  $('#modeHintA').textContent='大模型转写已就绪 · 文本将发送至硅基流动';
+  const h=$('#modeHintA');
+  if(h) h.textContent='AI 转写已就绪';
 }
-$('#llmBtn').addEventListener('click',e=>{
-  e.stopPropagation();
-  const p=$('#llmPanel'); p.classList.toggle('open');
-  if(p.classList.contains('open')){ const mine=localStorage.getItem(LLM.KEY_NAME)||''; $('#llmKeyInput').value=mine; $('#llmStatus').textContent=mine?'当前状态：你的专属 Key 已启用':'当前状态：内置公共 Key 已启用，AI 开箱即用（可粘贴自己的 Key 覆盖）'; }
-});
-document.addEventListener('click',e=>{
-  const p=$('#llmPanel');
-  if(p.classList.contains('open')&&!p.contains(e.target)&&e.target!==$('#llmBtn')) p.classList.remove('open');
-});
-$('#llmSave').addEventListener('click',()=>{
-  const v=$('#llmKeyInput').value.trim();
-  if(v.length<20){ $('#llmStatus').textContent='这个 Key 看着不对，请检查'; return; }
-  localStorage.setItem(LLM.KEY_NAME,v);
-  syncEngineUI(); $('#llmStatus').textContent='已保存——现在去功能A或聊天室试试 AI 模式';
-  setTimeout(()=>$('#llmPanel').classList.remove('open'),1200);
-});
-$('#llmClear').addEventListener('click',()=>{
-  localStorage.removeItem(LLM.KEY_NAME); $('#llmKeyInput').value='';
-  syncEngineUI(); $('#llmStatus').textContent='已清除个人 Key，恢复使用内置公共 Key';
-});
 
 /* ---------- 功能A：LLM 转写 ---------- */
 async function llmGenSpeech(text){
