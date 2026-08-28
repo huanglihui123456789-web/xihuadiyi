@@ -844,7 +844,7 @@ $$('.demo-a').forEach(b=>b.addEventListener('click',()=>{
 ================================================================== */
 const LLM={
   KEY_NAME:'zc_api_key', MODEL:'deepseek-ai/DeepSeek-V4-Flash',
-  KEY_DEFAULT:'sk-kpwnarxygztqdrwwwynjdfozycbpkyhuitcelhjaxqqlojdg',
+  KEY_DEFAULT:'sk-ueqizisawvuhepywiqptmcfqefhrizebwhdtyqbykpshxgrl',
   BASE:'https://api.siliconflow.cn/v1/chat/completions',
   get key(){ try{return localStorage.getItem(this.KEY_NAME)||this.KEY_DEFAULT}catch(e){return this.KEY_DEFAULT} },
   hasKey(){ return true },
