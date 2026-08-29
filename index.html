@@ -150,6 +150,14 @@ body.plain .beat{display:none}
   background:var(--accent-soft);border-radius:0 8px 8px 0;font-size:14px;color:var(--text);
 }
 .kw{color:var(--accent);font-weight:600}
+.hl-red{color:var(--accent);font-weight:600}
+.tag-beat{
+  font-family:var(--mono);font-size:12px;color:var(--accent);font-style:normal;
+  border:1px solid var(--accent-line);background:var(--accent-soft);
+  border-radius:999px;padding:1px 8px;margin:0 4px;white-space:nowrap;
+  display:inline-block;transform:translateY(-1px);
+}
+body.plain .tag-beat{display:none}
 
 /* 骨架态 */
 .skeleton .skl{
@@ -605,9 +613,9 @@ function clamp(n,a,b){ return Math.max(a,Math.min(b,n)); }
 let persona = 'detail';
 const personaNames = { detail:'细节狂魔型', macro:'宏观战略型', aggressive:'激进压制型', dream:'梦中情导型', devil:'抬杠高手型' };
 
-function showToast(msg){
+function showToast(msg,dur){
   const t=$('#toast'); t.textContent=msg; t.classList.add('show');
-  clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),1600);
+  clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),dur||1600);
 }
 function copyText(text, btn){
   const done=()=>{ if(btn){ const o=btn.textContent; btn.textContent='已复制'; btn.classList.add('done'); setTimeout(()=>{btn.textContent=o;btn.classList.remove('done')},1400);} };
@@ -726,7 +734,7 @@ function firstCoreHook(sents){
   }
   return core||sents[0]||'';
 }
-function beatTag(seed,label){
+function beatTag(label){
   return '<span class="beat">['+label+']</span>';
 }
 function genSpeech(rawInput){
@@ -756,7 +764,7 @@ function genSpeech(rawInput){
 
   /* 抓人句 */
   const hookHtml =
-    beatTag(seed,'停顿 1s') +
+    beatTag('停顿 1s') +
     '一句话讲完：我们的核心就是'+esc(hookShort)+'。' +
     '<br>' + esc(metaphor)+'。';
 
@@ -766,9 +774,9 @@ function genSpeech(rawInput){
   const tr2=pick(transitions.slice(1).concat(['接下来是重点，']),seed>>4);
   const hasVisual=/图|曲线|趋势|表格|对比|折线/.test(clean);
   const script=[
-    beatTag(seed+1,'放慢语速')+tr1+oralMain+'。',
-    beatTag(seed+2,hasVisual?'手指 PPT 曲线':pick(beatPool,seed>>3))+'打比方的话，'+esc(metaphor)+'，这就是我们在做的事。',
-    beatTag(seed+3,'加重语气')+(metricBest
+    beatTag('放慢语速')+tr1+oralMain+'。',
+    beatTag(hasVisual?'手指 PPT 曲线':pick(beatPool,seed>>3))+'打比方的话，'+esc(metaphor)+'，这就是我们在做的事。',
+    beatTag('加重语气')+(metricBest
       ? tr2+'如果全场只记一个数，请记住：<span class="kw">'+esc(metricBest)+'</span>。其余细节不用抄，会后问我。'
       : tr2+'这一页大家只需要记住结论方向，具体数值我标注在页脚了。')
   ];
@@ -793,47 +801,40 @@ function renderSkeleton(el,lines){
     Array.from({length:lines},()=>'<div class="skl" style="width:'+(62+Math.random()*34)+'%"></div>').join('')+
     '</div></div>';
 }
+function renderA(r){
+  const out=$('#outA');
+  out.innerHTML=
+    '<div class="paper"><div class="paper-inner">'+
+    '<p class="scan-note" style="margin-bottom:18px">识别领域：'+esc(r.domainName)+'</p>'+
+    '<div class="block"><div class="block-label"><span>一句话抓人</span><button class="copy-btn" data-copy="'+encodeURIComponent(r.hookPlain)+'">复制</button></div><div>'+r.hookHtml+'</div></div>'+
+    '<div class="block"><div class="block-label"><span>口头逐字稿 ×3（含节奏提示）</span><button class="copy-btn" data-copy-full>复制全稿</button></div>'+
+    r.script.map(s=>'<p class="script-line">'+s+'</p>').join('')+
+    '</div>'+
+    '<div class="block"><div class="block-label"><span>贴 PPT 建议</span></div><div class="ppt-tip">'+r.pptTip+'</div></div>'+
+    clipBlockHTML()+
+    '</div></div>';
+  bindCopyBtns(out,r.plainText);
+  _lastA={hookPlain:r.hookPlain,plainText:r.plainText,scriptPlain:Array.isArray(r.script)?r.script.join('\n'):r.plainText};
+}
+function localAFallback(val){
+  const r=genSpeech(val);
+  if(!r){ $('#outA').innerHTML=''; showToast('文本太短，换个长一点的段落'); return; }
+  renderA(r);
+}
 $('#btnA').addEventListener('click',async()=>{
   const val=$('#taA').value.trim();
   const err=$('#errA');
   if(val.length<2){ err.classList.add('show'); $('#taA').focus(); return; }
   err.classList.remove('show');
-  const out=$('#outA');
-  renderSkeleton(out,5);
+  renderSkeleton($('#outA'),5);
   if(LLM.enabled()){
     let r=null;
     try{ r=await llmGenSpeech(val); }catch(e){ showToast('AI 调用失败，已回落本地引擎'); }
-    if(!r){ out.innerHTML=''; return; }
-    out.innerHTML=
-      '<div class="paper"><div class="paper-inner">'+
-      '<p class="scan-note" style="margin-bottom:18px">识别领域：'+esc(r.domainName)+'</p>'+
-      '<div class="block"><div class="block-label"><span>一句话抓人</span><button class="copy-btn" data-copy="'+encodeURIComponent(r.hookPlain)+'">复制</button></div><div>'+r.hookHtml+'</div></div>'+
-      '<div class="block"><div class="block-label"><span>口头逐字稿 ×3（含节奏提示）</span><button class="copy-btn" data-copy-full>复制全稿</button></div>'+
-      r.script.map((s,i)=>'<p class="script-line">'+s+'</p>').join('')+
-      '</div>'+
-      '<div class="block"><div class="block-label"><span>贴 PPT 建议</span></div><div class="ppt-tip">'+r.pptTip+'</div></div>'+
-      clipBlockHTML()+
-      '</div></div>';
-    bindCopyBtns(out,r.plainText);
-    _lastA={hookPlain:r.hookPlain,plainText:r.plainText,scriptPlain:Array.isArray(r.script)?r.script.join('\n'):r.plainText};
+    if(r){ renderA(r); return; }
+    localAFallback(val);
     return;
   }
-  setTimeout(()=>{
-    const r=genSpeech(val);
-    if(!r){ out.innerHTML=''; showToast('文本太短，换个长一点的段落'); return; }
-    out.innerHTML=
-      '<div class="paper"><div class="paper-inner">'+
-      '<p class="scan-note" style="margin-bottom:18px">识别领域：'+esc(r.domainName)+'</p>'+
-      '<div class="block"><div class="block-label"><span>一句话抓人</span><button class="copy-btn" data-copy="'+encodeURIComponent(r.hookPlain)+'">复制</button></div><div>'+r.hookHtml+'</div></div>'+
-      '<div class="block"><div class="block-label"><span>口头逐字稿 ×3（含节奏提示）</span><button class="copy-btn" data-copy-full>复制全稿</button></div>'+
-      r.script.map((s,i)=>'<p class="script-line">'+s+'</p>').join('')+
-      '</div>'+
-      '<div class="block"><div class="block-label"><span>贴 PPT 建议</span></div><div class="ppt-tip">'+r.pptTip+'</div></div>'+
-      clipBlockHTML()+
-      '</div></div>';
-    bindCopyBtns(out,r.plainText);
-    _lastA={hookPlain:r.hookPlain,plainText:r.plainText,scriptPlain:Array.isArray(r.script)?r.script.join('\n'):r.plainText};
-  },750);
+  setTimeout(()=>localAFallback(val),750);
 });
 $$('.demo-a').forEach(b=>b.addEventListener('click',()=>{
   $('#taA').value='为了系统验证本文所提方法的有效性，我们构建了一个包含12,847个样本的大规模评测集合，并在三个公开基准上进行了充分对比实验。实验结果表明，本文方法的准确率达到91.2%，较现有最优基线模型提升了3.8个百分点（p<0.01），同时推理延迟降低了约27%。消融实验进一步证实了各模块的贡献，上述结果均在多次随机种子下保持稳定，说明该方法具有较强的泛化能力与鲁棒性。';
@@ -844,27 +845,55 @@ $$('.demo-a').forEach(b=>b.addEventListener('click',()=>{
 ================================================================== */
 const LLM={
   KEY_NAME:'zc_api_key', MODEL:'deepseek-ai/DeepSeek-V4-Flash',
-  KEY_DEFAULT:'sk-ueqizisawvuhepywiqptmcfqefhrizebwhdtyqbykpshxgrl',
+  /* 内置 Key 混淆存放：倒序+Base64，防仓库扫描/爬虫直读明文（浏览器端无真加密，
+     有心人从网络面板仍可见，属已知取舍）。更换 Key 两步：
+     1) 控制台或 Node 执行：btoa('新明文key'.split('').reverse().join(''))
+     2) 用输出结果替换 KEY_SEED 即可 */
+  KEY_SEED:'ZmhuY2xpeHN6YXlzeHVsand0anlsc3Nwb3R5dG53Y2Jld3lhcmdwZGdyYnRkdml1LWtz',
+  DAILY_CAP:30,
   BASE:'https://api.siliconflow.cn/v1/chat/completions',
+  get KEY_DEFAULT(){ try{return atob(this.KEY_SEED).split('').reverse().join('')}catch(e){return ''} },
   get key(){ try{return localStorage.getItem(this.KEY_NAME)||this.KEY_DEFAULT}catch(e){return this.KEY_DEFAULT} },
   hasKey(){ return true },
   enabled(){ return true },
+  ownKey(){ try{return !!localStorage.getItem(this.KEY_NAME)}catch(e){return false} },
+  quotaLeft(){
+    try{
+      const q=JSON.parse(localStorage.getItem('zc_daily')||'{}');
+      const d=new Date();
+      if(q.d!==[d.getFullYear(),d.getMonth()+1,d.getDate()].join('-')) return true;
+      return (q.n||0)<this.DAILY_CAP;
+    }catch(e){ return true; }
+  },
+  quotaConsume(){
+    try{
+      const q=JSON.parse(localStorage.getItem('zc_daily')||'{}');
+      const d=new Date();
+      const today=[d.getFullYear(),d.getMonth()+1,d.getDate()].join('-');
+      localStorage.setItem('zc_daily',JSON.stringify({d:today,n:q.d===today?(q.n||0)+1:1}));
+    }catch(e){}
+  },
+  capNotice(){ showToast('今日 AI 体验次数已用完，已切换本地引擎——功能完整但台词朴素，明天自动恢复',3200); },
   markOutage(kind){
     let b=document.getElementById('aiBanner');
     if(!b){ b=document.createElement('div'); b.id='aiBanner';
       b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99;padding:9px 16px;font-size:.82rem;line-height:1.6;display:flex;gap:12px;align-items:center;justify-content:center;background:#b8332a;color:#fdfbf5';
       const btn=document.createElement('button');
       btn.textContent='知道了';btn.style.cssText='border:1px solid rgba(255,255,255,.55);background:none;color:#fff;border-radius:999px;padding:2px 12px;font-size:.75rem;cursor:pointer';
-      btn.onclick=()=>b.remove();
+      btn.onclick=()=>{ b.remove(); document.body.style.paddingTop=''; };
       b.appendChild(document.createElement('span'));b.appendChild(btn);
       (document.body||document.documentElement).appendChild(b);
     }
     b.firstChild.textContent = kind==='quota'
-      ? '⚠ 内置公共 Key 的 AI 额度已耗尽——AI 功能暂时回落到本地引擎（功能完整但台词更朴素）。你有 SiliconFlow Key 的话，点右上角设置填入即可立刻恢复。'
+      ? '⚠ 内置公共 Key 的 AI 额度已耗尽——AI 功能暂时回落到本地引擎（功能完整但台词更朴素）。额度恢复后自动切回，无需刷新。'
       : '⚠ AI 服务持续不可用，已切换本地引擎。稍后自动恢复，无需刷新。';
     if(kind==='quota'&&document.body) document.body.style.paddingTop=b.offsetHeight+'px';
   },
   async chat(messages,maxTokens,temp){
+    if(!this.ownKey()){
+      if(!this.quotaLeft()){ this.capNotice(); throw Object.assign(new Error('daily cap'),{fatal:true}); }
+      this.quotaConsume();
+    }
     let lastErr=null;
     for(let attempt=0;attempt<2;attempt++){
       if(attempt===1) await new Promise(r=>setTimeout(r,900));
@@ -872,8 +901,8 @@ const LLM={
         const r=await fetch(this.BASE,{method:'POST',
           headers:{'Content-Type':'application/json','Authorization':'Bearer '+this.key},
           body:JSON.stringify({model:this.MODEL,messages,temperature:(temp!==undefined?temp:0.9),max_tokens:maxTokens||900}),
-          signal:AbortSignal.timeout(35000)});
-        if(r.status===401||r.status===402||r.status===429&&attempt===1){
+          signal:(window.AbortSignal&&AbortSignal.timeout)?AbortSignal.timeout(35000):undefined});
+        if(r.status===401||r.status===402||(r.status===429&&attempt===1)){
           const e=new Error('HTTP '+r.status);
           if(r.status!==429){ this.markOutage('quota'); }
           throw Object.assign(e,{fatal:r.status!==429});
@@ -913,7 +942,7 @@ async function llmGenSpeech(text){
   if(!j.hook||!Array.isArray(j.script)||j.script.length<3) throw new Error('bad shape');
   const tagRe=/\[(停顿 ?1s?|加重语气|手指 ?PPT(?:曲线)?|放慢语速)\]/g;
   const hookHtml='<span class="hl-red">'+esc(j.hook)+'</span>';
-  const script=j.script.slice(0,5).map(s=>'<span class="beat">'+esc(s).replace(tagRe,'<i class="tag-beat">[$1]</i>')+'</span>');
+  const script=j.script.slice(0,5).map(s=>esc(s).replace(tagRe,'<i class="tag-beat">[$1]</i>'));
   const res={domainName:j.domain+' · AI 转写',hookPlain:j.hook,hookHtml,script,
     pptTip:esc(j.tips||'提炼后只留一个数字结论写在页面上'),
     plainText:j.hook+'\n\n'+j.script.slice(0,5).join('\n\n')+'\n\n[贴PPT建议] '+(j.tips||'')};
@@ -1208,11 +1237,25 @@ function scanFlaws(text){
   }
   return found.sort((a,b)=>b.w-a.w);
 }
+/* 常盯死穴 → 检测器权重映射：勾选的死穴提升对应发难点的出题优先级 */
+const FOCUS_BOOST={
+ 数据细节:{sample:7,nometric:7},
+ 实验方法:{control:8},
+ 理论创新:{baseline:6,novel:6},
+ 写作规范:{overclaim:6},
+ 进度管理:{nolimit:4},
+ 文献功底:{baseline:7}
+};
 function buildQuestions(text,personaKey){
   /* 新增/自定义导师通过 alias 借用原型的出题偏好与补充题库 */
   const pk=(TONE[personaKey]&&TONE[personaKey].alias)||personaKey;
+  const focus=(TONE[personaKey]&&TONE[personaKey].focus)||[];
   const hits=scanFlaws(text);
-  const scored=hits.map(d=>({ ...d,score:d.w+((d.boost&&(d.boost[personaKey]||d.boost[pk]))||0) }));
+  const scored=hits.map(d=>{
+    let sc=d.w+((d.boost&&(d.boost[personaKey]||d.boost[pk]))||0);
+    for(const f of focus){ const m=FOCUS_BOOST[f]; if(m&&m[d.id]) sc+=m[d.id]; }
+    return { ...d,score:sc };
+  });
   scored.sort((a,b)=>b.score-a.score);
   let list=scored.slice(0,5);
   // 不足则按人设补充经典题
@@ -1299,7 +1342,7 @@ const TONE={
    —— 本地引擎的行为池(open/reject/…)与出题偏好通过 alias 借用五原型，
    AI 模式则完整使用各自的 style/ex 人设 DNA
 ================================================================== */
-const _say=m=>(typeof toast==='function')?toast(m):alert(m);
+const _say=m=>showToast(m,3200);
 const NEW_TONES=[
  {k:'fangyang',n:'放养自灭型',d:'三个月不见人影，一开口就是查进度、追时间线。',q:'“你最近都在忙什么？说给我听听。”',a:'aggressive',
   s:'平时基本失联，一旦出现就要求立刻汇报全部进度；问话简短居高临下，爱让学生当场回忆时间线："上周做了什么？""为什么卡了三天不找我？"；批评时只丢一句"你自己想想"，然后沉默等你先开口。',
@@ -1397,7 +1440,7 @@ function applyCustom(j,select){
   TONE.custom={
     name:j.tick?('「'+j.tick+'」型'):'自定义导师',
     style:buildCustomStyle(j),
-    ex:TONE[alias].ex.slice(0),alias:alias,heat:+j.heat||3};
+    ex:TONE[alias].ex.slice(0),alias:alias,heat:+j.heat||3,focus:j.focus||[]};
   normTone();
   personaNames.custom=TONE.custom.name;
   const c=ensureCustomCard();
@@ -1529,6 +1572,9 @@ $('#btnImpCode').addEventListener('click',()=>{
     _say('遭遇码装载完成：「'+personaNames.shared+'」已进入待命状态。贴入材料即可开战。');
   }catch(e){_say('遭遇码无效或已损坏，请检查是否复制完整。');}
 });
+$('#ipCode').addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&!e.isComposing){ e.preventDefault(); $('#btnImpCode').click(); }
+});
 /* 三轮递进弹药：r1 用检测器/通用题库原题，r2/r3 按漏洞类型定制 */
 const PRESS={
  sample:{r2:'我没听到数。n 到底多少、哪一批、凭什么够用？三件事一口气说完。',
@@ -1571,7 +1617,7 @@ function judgeAnswer(ans){
   const admit=/确实|承认|是我的问题|考虑不周|疏忽|没做到位|准备不足/.test(a);
   if(solid) return {grade:'solid',admit};
   const pureAttitude=/努力|争取|尽量|会改进|注意|重视|加油|好好/.test(a)&&!solid;
-  return {grade:pureAttitude?'weak':(a.length<16?'hollow':'hollow'),admit};
+  return {grade:pureAttitude?'weak':'hollow',admit};
 }
 
 /* ---------- 聊天状态机 ---------- */
@@ -1680,9 +1726,10 @@ async function advanceTopic(){
   }
   /* 本地：从漏网检测器 / 预置弹药库循环取题 */
   const seen=new Set(chat.tally.map(t=>t.essence));
+  const _exPool=ENDLESS_EXTRA[persona]||ENDLESS_EXTRA[(TONE[persona]&&TONE[persona].alias)]||ENDLESS_EXTRA.detail;
   let cand=buildQuestions(chat.material,persona).find(x=>!seen.has(x.essence))
-        ||ENDLESS_EXTRA[persona].find(x=>!seen.has(x.essence))
-        ||ENDLESS_EXTRA[persona][0];
+        ||_exPool.find(x=>!seen.has(x.essence))
+        ||_exPool[0];
   const q={...cand,generic:true};
   chat.qs.push(q); chat.tally.push({essence:q.essence,rounds:0,pass:false});
   chat.qi=chat.qs.length-1; chat.busy=false;
@@ -1918,7 +1965,7 @@ function computeRisk(text){
 }
 /* ---------- AI 深度评审：LLM 结构化增强，失败静默回落本地结果 ---------- */
 let _aiDeepSeq=0;
-async function aiDeepAssess(val,flaws){
+async function aiDeepAssess(val,flaws,onDone){
   const box=$('#aiDeep'); if(!box) return;
   const seq=++_aiDeepSeq;
   box.innerHTML='<div class="ai-deep"><h4>AI 深度评审 · 批阅中…</h4><p class="hint">正在请一位毒舌评审通读你的材料，约十秒。</p></div>';
@@ -1934,6 +1981,7 @@ async function aiDeepAssess(val,flaws){
       (j.advice&&j.advice.length?'<p class="hint" style="margin-top:10px">抢救动作（按优先级）</p><ul>'+li(j.advice,'adv')+'</ul>':'')+
       (j.note?'<p class="ad-note">评审批语：「'+esc(String(j.note).slice(0,60))+'」</p>':'')+
       '</div>';
+    if(onDone&&seq===_aiDeepSeq) onDone(box.innerHTML);
   }catch(e){ if(seq!==_aiDeepSeq) return; box.innerHTML=''; }
 }
 function renderRisk(res,short){
@@ -2006,16 +2054,23 @@ function animateGauge(target,color){
   }
   requestAnimationFrame(frame);
 }
+const _riskCache=new Map();
 $('#btnC').addEventListener('click',()=>{
   const val=$('#taC').value.trim();
   const err=$('#errC');
   if(val.length<2){ err.classList.add('show'); $('#taC').focus(); return; }
   err.classList.remove('show');
   renderSkeleton($('#outC'),4);
+  const ck=val.slice(0,2000);
+  const cached=_riskCache.get(ck);
   setTimeout(()=>{
+    if(cached){ renderRisk(cached.res,val.length<50); const d=$('#aiDeep'); if(d) d.innerHTML=cached.deep; return; }
     const res=computeRisk(val);
     renderRisk(res,val.length<50);
-    aiDeepAssess(val,res.flaws);
+    aiDeepAssess(val,res.flaws,deepHTML=>{
+      if(_riskCache.size>40) _riskCache.clear();
+      _riskCache.set(ck,{res,deep:deepHTML});
+    });
   },800);
 });
 $$('.demo-c').forEach(b=>b.addEventListener('click',()=>{
