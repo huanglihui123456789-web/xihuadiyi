@@ -523,10 +523,16 @@ textarea:focus,input:focus{box-shadow:0 0 0 3px rgba(184,51,42,.1)}
           <p class="hint">⚠ 请勿填写导师真实姓名、院校等可识别信息——只描述风格即可，避免名誉权纠纷。</p>
           <div style="display:flex;gap:10px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:12px">
             <button class="btn btn-ghost" id="btnGenCode">生成我的遭遇码</button>
+            <button class="btn btn-ghost" id="btnChalCard">生成挑战卡图片</button>
             <button class="btn btn-ghost" id="btnImpCode">粘贴遭遇码，挑战朋友的导师</button>
             <input id="ipCode" placeholder="粘贴 ZHS. 开头的遭遇码…" style="flex:1;min-width:200px;display:none">
           </div>
           <p class="hint">遭遇码是一串字符：把自己的导师画像压缩后发给朋友——ta 粘贴进来就能被你的导师拷问。评论区交换码已成保留节目。</p>
+          <div id="chalWrap" style="display:none;margin-top:14px;text-align:center">
+            <img alt="导师挑战卡" style="max-width:300px;border:1px solid var(--line-strong);border-radius:12px">
+            <div style="margin-top:10px"><button class="btn btn-primary" id="dlChal">下载挑战卡 PNG</button></div>
+            <p class="hint">发布时把已复制的遭遇码一起粘进配文，别人才能扫码+粘贴挑战</p>
+          </div>
         </div>
       </details>
     </div>
@@ -1523,22 +1529,77 @@ $('#btnSaveCust').addEventListener('click',()=>{
 })();
 
 /* ---------- 遭遇码：把自己的导师编码成短串，让别人也能测试 ---------- */
-$('#btnGenCode').addEventListener('click',()=>{
-  let payload;
+function buildEncounterCode(){
+  let name;
   if(persona==='custom'){
     let j={};try{j=JSON.parse(localStorage.getItem('zc_custom_mentor'))||{};}catch(e){}
-    payload={v:1,k:j.alias||'dream',n:personaNames.custom,
+    name=personaNames.custom;
+    const payload={v:1,k:j.alias||'dream',n:name,
       s:buildCustomStyle(j),x:TONE.custom.ex.slice(0,2),h:+j.heat||3};
-  }else{
-    const t=TONE[persona]||TONE.detail;
-    payload={v:1,k:t.alias||persona,n:t.name,s:t.style,x:t.ex.slice(0,2)};
+    return {code:'ZHS.'+btoa(unescape(encodeURIComponent(JSON.stringify(payload)))),name,payload};
   }
-  let code='';
-  try{code='ZHS.'+btoa(unescape(encodeURIComponent(JSON.stringify(payload))));}
-  catch(e){_say('生成失败，换个简短的描述再试。');return;}
+  const t=TONE[persona]||TONE.detail;
+  name=t.name;
+  const payload={v:1,k:t.alias||persona,n:name,s:t.style,x:t.ex.slice(0,2)};
+  return {code:'ZHS.'+btoa(unescape(encodeURIComponent(JSON.stringify(payload)))),name,payload};
+}
+/* 挑战卡：发给朋友 「用我的导师拷问你」 的图片物料 */
+let lastChalURL='';
+function makeChallengeCard(code,payload){
+  const W=1080,H=1440;
+  const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+  const ctx=cv.getContext('2d');
+  ctx.fillStyle='#f7f3ea'; ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='rgba(33,28,21,.25)'; ctx.lineWidth=2;
+  ctx.strokeRect(44,44,W-88,H-88);
+  ctx.textAlign='left';
+  ctx.fillStyle='#b8332a'; ctx.fillRect(84,104,20,20);
+  ctx.fillStyle='#221d15'; ctx.font='600 38px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillText('组会求生舱',118,124);
+  ctx.textAlign='center';
+  ctx.fillStyle='#6e6659'; ctx.font='30px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillText('—— 挑 战 卡 ——',W/2,230);
+  ctx.fillStyle='#221d15'; ctx.font='900 88px "Songti SC","SimSun",serif';
+  ctx.fillText('我的导师已就位',W/2,360);
+  const name=(payload&&payload.n)||'神秘导师';
+  ctx.font='700 50px "Songti SC","SimSun",serif';
+  const nw=ctx.measureText(name).width+96;
+  ctx.strokeStyle='#b8332a'; ctx.lineWidth=4;
+  roundRectPath(ctx,W/2-nw/2,428,nw,100,16); ctx.stroke();
+  ctx.fillStyle='#b8332a'; ctx.fillText(name,W/2,492);
+  ctx.fillStyle='#221d15'; ctx.font='44px "Songti SC","SimSun",serif';
+  wrapText(ctx,'「敢不敢让 ta 拷问你一轮？」',W/2,660,W-220,66);
+  drawQR(ctx,W/2-150,790,300);
+  ctx.fillStyle='#6e6659'; ctx.font='28px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillText('扫码进入组会求生舱',W/2,1140);
+  ctx.fillText('复制配文里的遭遇码粘贴给 ta，即刻开战',W/2,1192);
+  ctx.fillStyle='#9a9083'; ctx.font='24px sans-serif';
+  ctx.fillText('组会求生舱 · 纯自嘲 · 请勿填写导师真实信息',W/2,1320);
+  lastChalURL=cv.toDataURL('image/png');
+  const wrap=document.getElementById('chalWrap');
+  if(wrap){
+    wrap.style.display='block';
+    wrap.querySelector('img').src=lastChalURL;
+    wrap.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
+}
+function copyCodeWith(code,okMsg){
   if(navigator.clipboard&&navigator.clipboard.writeText){
-    navigator.clipboard.writeText(code).then(()=>_say('遭遇码已复制！发到评论区或群里，邀请大家挑战。'),()=>prompt('手动复制遭遇码：',code));
+    navigator.clipboard.writeText(code).then(()=>_say(okMsg),()=>prompt('手动复制遭遇码：',code));
   }else prompt('手动复制遭遇码：',code);
+}
+$('#btnGenCode').addEventListener('click',()=>{
+  let out;
+  try{ out=buildEncounterCode(); }
+  catch(e){ _say('生成失败，换个简短的描述再试。'); return; }
+  copyCodeWith(out.code,'遭遇码已复制！发到评论区或群里，邀请大家挑战。');
+});
+$('#btnChalCard').addEventListener('click',()=>{
+  let out;
+  try{ out=buildEncounterCode(); }
+  catch(e){ _say('生成失败，换个简短的描述再试。'); return; }
+  makeChallengeCard(out.code,out.payload);
+  copyCodeWith(out.code,'遭遇码已复制！和挑战卡一起发出去即可。');
 });
 $('#btnImpCode').addEventListener('click',()=>{
   const ip=document.getElementById('ipCode');
@@ -1817,10 +1878,10 @@ async function finishChat(mode){
     :TONE[persona].finale);
 
   const ratio=passed/topics;
-  const gradeT = ratio>=0.8?{letter:'A',cap:'抗揍型选手'}
-               : ratio>=0.6?{letter:'B',cap:'有来有回'}
-               : ratio>=0.4?{letter:'C',cap:'被打成筛子'}
-               : {letter:'D',cap:'建议连夜重构材料'};
+  const gradeT = ratio>=0.8?{letter:'A',cap:'金钟罩选手 · 可约战预答辩'}
+               : ratio>=0.6?{letter:'B',cap:'有来有回 · 就差一口气'}
+               : ratio>=0.4?{letter:'C',cap:'被打成筛子 · 话术抄进备注区'}
+               : {letter:'D',cap:'连夜重构吧 · 明天的你会感谢今晚'};
   const rep=document.createElement('div');
   rep.className='report-panel';
   rep.innerHTML=
@@ -1958,9 +2019,13 @@ function computeRisk(text){
   const worst=[...dimScores].sort((a,b)=>a.score-b.score)[0];
   const warnPick=worst.items[0]||'暂时侦察不到明显火力点，但也别高兴太早';
 
-  const tier=survive>=85?['稳如老狗','可从容微笑、适当反问']
-            :survive>=60?['有惊无险','重点区域提前背话术']
-            :['深呼吸再上台','建议立刻按功能B补课'];
+  const tier=survive>=95?['稳如老狗','可以从容微笑、适当反问']
+            :survive>=85?['天选科研人','小瑕疵挡不住你的光']
+            :survive>=70?['有惊无险','重点区域提前背话术']
+            :survive>=55?['薛定谔的过关','导师心情决定生死']
+            :survive>=40?['深呼吸再上台','建议立刻按功能B补课']
+            :survive>=25?['PPT 正在冒烟','连夜重构，天亮再战']
+            :['延毕预备役','这份材料明天别拿出教室'];
   return {survive,dimScores,tier,warnPick,flawCount:flaws.length,flaws};
 }
 /* ---------- AI 深度评审：LLM 结构化增强，失败静默回落本地结果 ---------- */
@@ -2077,6 +2142,51 @@ $$('.demo-c').forEach(b=>b.addEventListener('click',()=>{
   $('#taC').value='本次汇报介绍本人硕士课题的中期进展。目前完成了文献综述与初步实验设计，在小规模数据上进行了探索性尝试，效果达到预期目标。下一步计划开展更大规模的正式实验并撰写论文初稿。';
 }));
 
+const QR_URL='https://huanglihui123456789-web.github.io/xihuadiyi/';
+const QR_MATRIX=[
+'111111100100110011010001001111111',
+'100000100111111111001100001000001',
+'101110101111010011110101001011101',
+'101110101000101110000010101011101',
+'101110101000100100100011001011101',
+'100000101011001110001110001000001',
+'111111101010101010101010101111111',
+'000000001001001100111100100000000',
+'101111100101111111111011101111100',
+'001010001001100010010101001101101',
+'010000111111100110100110111010110',
+'001110001111001110010111001011111',
+'100100100010100000100011110111010',
+'001101011100001110010001001100011',
+'111100100010110000001100111111110',
+'000011011000101010000110111101100',
+'011010101110011001111011110111001',
+'000101001011000001010101001101101',
+'110101110101101111001100001110110',
+'010010011011011101100110110111101',
+'000010111101001010000010010111011',
+'111010010100100100111001001001101',
+'101100101110110111001100001000110',
+'100000000010100100100101000001100',
+'100111110110010111111011111110010',
+'000000001101111000010110100010101',
+'111111100111000100101111101010100',
+'100000101010100100000101100011101',
+'101110101101001000111010111111000',
+'101110101101110110011101110010011',
+'101110101001110001001111111100100',
+'100000100100111010000110011011100',
+'111111101110010011110010111101010'
+];
+/* 二维码绘制：size 为含白边的正方形边长 */
+function drawQR(ctx,x,y,size){
+  ctx.save();
+  ctx.fillStyle='#fff'; ctx.fillRect(x,y,size,size);
+  const pad=size*0.08, n=QR_MATRIX.length, cell=(size-pad*2)/n, ox=x+pad, oy=y+pad;
+  ctx.fillStyle='#221d15';
+  for(let r=0;r<n;r++) for(let c=0;c<n;c++) if(QR_MATRIX[r][c]==='1') ctx.fillRect(ox+c*cell,oy+r*cell,cell+0.5,cell+0.5);
+  ctx.restore();
+}
 /* ---------- Canvas 分享卡片 ---------- */
 let lastCardURL='';
 function makeShareCard(res){
@@ -2124,12 +2234,11 @@ function makeShareCard(res){
   ctx.fillStyle='#221d15'; ctx.font='500 40px "PingFang SC","Microsoft YaHei",sans-serif';
   wrapText(ctx,res.warnPick,cx,cy+720,W-260,56);
 
-  // 底部：二维码占位 + slogan
+  // 底部：二维码 + slogan
   const qy=H-380;
-  ctx.setLineDash([10,8]); ctx.strokeStyle='rgba(33,28,21,.4)'; ctx.lineWidth=2;
-  ctx.strokeRect(120,qy,180,180); ctx.setLineDash([]);
-  ctx.fillStyle='#9a9083'; ctx.font='24px sans-serif';
-  ctx.fillText('贴上你的推广码',210,qy+214);
+  drawQR(ctx,120,qy,180);
+  ctx.fillStyle='#9a9083'; ctx.font='22px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillText('扫码来测你的生存率',210,qy+210);
   ctx.textAlign='left';
   ctx.fillStyle='#221d15'; ctx.font='600 36px "PingFang SC","Microsoft YaHei",sans-serif';
   ctx.fillText('测测你的组会生存率',370,qy+92);
@@ -2218,7 +2327,8 @@ function makeChatShot(){
     for(const l of it.lines){ ctx.fillText(l,bx+bubPad,yy); yy+=lineH; }
     y+=bh+gap;
   }
-  /* 底部 slogan */
+  /* 底部 slogan + 二维码 */
+  drawQR(ctx,W-234,H-270,150);
   ctx.textAlign='center';
   ctx.fillStyle='#6e6659'; ctx.font='30px "PingFang SC","Microsoft YaHei",sans-serif';
   ctx.fillText('你也来测测：撑得住你导师几轮？',W/2,H-150);
@@ -2240,6 +2350,10 @@ document.addEventListener('click',e=>{
   if(e.target.id==='dlShot'&&lastShotURL){
     const a=document.createElement('a');
     a.href=lastShotURL; a.download='组会对话截图.png'; a.click();
+  }
+  if(e.target.id==='dlChal'&&lastChalURL){
+    const a=document.createElement('a');
+    a.href=lastChalURL; a.download='导师挑战卡.png'; a.click();
   }
 });
 
@@ -2267,6 +2381,19 @@ document.addEventListener('click',e=>{
     const m=$('#guideModal');
     if(m) m.style.display='flex';
   }
+})();
+/* 抖音直达动线：?jump=a/b/c 跳过引导直达对应功能区 */
+(function(){
+  let jump=null;
+  try{jump=new URLSearchParams(location.search).get('jump');}catch(e){}
+  if(!jump) return;
+  try{localStorage.setItem('zc_seen_guide','1');}catch(err){}
+  const m=$('#guideModal'); if(m) m.style.display='none';
+  const target=document.getElementById('f-'+jump);
+  if(target) setTimeout(function(){
+    window.scrollTo({top:target.offsetTop-64,behavior:'instant'});
+    const ta=target.querySelector('textarea'); if(ta) ta.focus();
+  },200);
 })();
 
 /* 顶部导航 平滑降级：锚点跳转后失焦样式可选，无需 JS */
