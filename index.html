@@ -1866,6 +1866,20 @@ async function handleSend(){
     }
   }
 }
+/* ---------- 智能锦囊：军师根据当前局势现场写应答（同题同轮缓存省额度，AI 挂了回落静态台词） ---------- */
+const _pocketCache=new Map();
+async function smartPocket(q){
+  const ck=chat.qi+':'+chat.round;
+  if(_pocketCache.has(ck)) return _pocketCache.get(ck);
+  const lastTutor=[...chat.log].reverse().find(m=>m.role==='tutor');
+  const sys='你是考研考博圈传说中的「军师」，专门在导师拷问现场给学生递纸条。当前局势——学生材料：「'+chat.material.slice(0,300)+'」；导师刚才的原话：「'+(lastTutor?String(lastTutor.text).slice(0,150):'（开场第一问）')+'」；当前发难点：「'+q.essence+'」，第'+(chat.round+1)+'回合；导师是'+TONE[persona].name+'。输出严格JSON：{"idea":"一句破题思路，≤20字，教学生往哪个方向想","script":"可直接照念的应答，60~110字，口语自然，必须呼应导师原话里的关键词，关键数据用【你的数字】【你的日期】占位（学生上台前自己填真实值），严禁照抄学生材料原句，先接住导师最后一问再给方案"}';
+  const j=await LLM.chatJSON([{role:'system',content:sys},{role:'user',content:'出锦囊。'}],400,0.85);
+  if(!j.idea||!j.script) throw new Error('bad shape');
+  const out={idea:String(j.idea).slice(0,30),script:String(j.script).slice(0,180)};
+  if(_pocketCache.size>30) _pocketCache.clear();
+  _pocketCache.set(ck,out);
+  return out;
+}
 async function finishChat(mode){
   chat.done=true; syncInput();
   updateProgress();
@@ -1942,12 +1956,28 @@ function renderChatShell(){
   boxC.querySelector('#chatTa').addEventListener('keydown',e=>{
     if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){ e.preventDefault(); handleSend(); }
   });
-  boxC.querySelector('.pocket-btn').addEventListener('click',()=>{
+  boxC.querySelector('.pocket-btn').addEventListener('click',async()=>{
+    const btn=boxC.querySelector('.pocket-btn');
     const q=currentQuestion();
-    if(!q) return;
-    boxC.querySelector('#chatTa').value=q.defense.join('\n');
+    if(!q||chat.busy||chat.done) return;
+    chat.busy=true; syncInput();
+    btn.textContent='军师研究中…';
+    let idea='',filled=false;
+    if(LLM.enabled()){
+      try{
+        const p=await smartPocket(q);
+        boxC.querySelector('#chatTa').value=p.script;
+        idea=p.idea; filled=true;
+      }catch(e){}
+    }
+    if(!filled){
+      boxC.querySelector('#chatTa').value=q.defense.join('\n');
+      idea='军师掉线了，这套是通用话术';
+    }
     chat.pocketPending=true; chat.pocketUses++;
-    showToast('锦囊已入稿——发送后将计入依赖统计');
+    btn.textContent='自救锦囊';
+    chat.busy=false; syncInput();
+    showToast((idea?idea+' —— ':'')+'锦囊已入稿，【你的数字】记得换成真数据',3600);
     boxC.querySelector('#chatTa').focus();
   });
 
