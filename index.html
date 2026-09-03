@@ -847,10 +847,10 @@ $$('.demo-a').forEach(b=>b.addEventListener('click',()=>{
 }));
 
 /* ==================================================================
-   大模型引擎（SiliconFlow 托管，内置公共 Key 供所有访客直接使用；访客也可在设置面板换成自己的 Key 覆盖）
+   大模型引擎（硅基流动 Qwen3.5-35B-A3B，内置公共 Key 供所有访客直接使用；访客也可在设置面板换成自己的 Key 覆盖）
 ================================================================== */
 const LLM={
-  KEY_NAME:'zc_api_key', MODEL:'deepseek-ai/DeepSeek-V4-Flash',
+  KEY_NAME:'zc_api_key', MODEL:'Qwen/Qwen3.5-35B-A3B',
   /* 内置 Key 混淆存放：倒序+Base64，防仓库扫描/爬虫直读明文（浏览器端无真加密，
      有心人从网络面板仍可见，属已知取舍）。更换 Key 两步：
      1) 控制台或 Node 执行：btoa('新明文key'.split('').reverse().join(''))
@@ -906,7 +906,7 @@ const LLM={
       try{
         const r=await fetch(this.BASE,{method:'POST',
           headers:{'Content-Type':'application/json','Authorization':'Bearer '+this.key},
-          body:JSON.stringify({model:this.MODEL,messages,temperature:(temp!==undefined?temp:0.9),max_tokens:maxTokens||900}),
+          body:JSON.stringify({model:this.MODEL,messages,temperature:(temp!==undefined?temp:0.9),max_tokens:maxTokens||900,enable_thinking:false}),
           signal:(window.AbortSignal&&AbortSignal.timeout)?AbortSignal.timeout(35000):undefined});
         if(r.status===401||r.status===402||(r.status===429&&attempt===1)){
           const e=new Error('HTTP '+r.status);
