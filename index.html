@@ -849,6 +849,29 @@ $$('.demo-a').forEach(b=>b.addEventListener('click',()=>{
 /* ==================================================================
    大模型引擎（硅基流动 Qwen3.5-35B-A3B，内置公共 Key 供所有访客直接使用；访客也可在设置面板换成自己的 Key 覆盖）
 ================================================================== */
+
+/* 远程总开关：仓库根目录 flag.json 内容 {"ai":true}。
+   改成 false 推送后，全网约 5 分钟内所有 AI 调用直接短路走本地引擎
+   （不再苦等 35s 超时重试），页面提示同步变成「本地引擎模式」。
+   用途：内置公共 Key 被打穿 / 额度耗尽 / 模型侧故障时的一键止血，无需服务器。
+   拉不到该文件时（含 file:// 双击本地打开）一律默认放行，不影响正常使用。 */
+const FLAG_URL='flag.json';
+const FLAG_INTERVAL=300000;
+const AI_GATE={ai:true};
+async function refreshFlag(){
+  try{
+    const r=await fetch(FLAG_URL+'?v='+Math.floor(Date.now()/FLAG_INTERVAL),{cache:'no-store'});
+    if(r.ok){
+      const j=await r.json();
+      /* 只认显式开：{"ai":true} / {"ai":"true"} / 不写该字段 = 放行；
+         其余任何写法（false、"false"、"off"、0……）一律关闸，防止手滑没关掉。 */
+      const v=j&&j.ai;
+      AI_GATE.ai=(v===undefined||v===true||v==='true');
+    }
+  }catch(e){/* 离线或 file://：保持放行，真断网时由 gateOpen 的在线判断兜底 */}
+  syncEngineUI();
+}
+
 const LLM={
   KEY_NAME:'zc_api_key', MODEL:'Qwen/Qwen3.5-35B-A3B',
   /* 内置 Key 混淆存放：倒序+Base64，防仓库扫描/爬虫直读明文（浏览器端无真加密，
@@ -860,8 +883,11 @@ const LLM={
   BASE:'https://api.siliconflow.cn/v1/chat/completions',
   get KEY_DEFAULT(){ try{return atob(this.KEY_SEED).split('').reverse().join('')}catch(e){return ''} },
   get key(){ try{return localStorage.getItem(this.KEY_NAME)||this.KEY_DEFAULT}catch(e){return this.KEY_DEFAULT} },
-  hasKey(){ return true },
-  enabled(){ return true },
+  /* 总开关：远程 flag.json 关闭、或浏览器自带离线状态时，一律不放行 AI 调用，
+     调用方据此即时回落本地引擎（避免 35s 超时 ×2 次把输入框锁死）。 */
+  gateOpen(){ return AI_GATE.ai!==false && navigator.onLine!==false; },
+  hasKey(){ return this.gateOpen() },
+  enabled(){ return this.gateOpen() },
   ownKey(){ try{return !!localStorage.getItem(this.KEY_NAME)}catch(e){return false} },
   quotaLeft(){
     try{
@@ -896,6 +922,7 @@ const LLM={
     if(kind==='quota'&&document.body) document.body.style.paddingTop=b.offsetHeight+'px';
   },
   async chat(messages,maxTokens,temp){
+    if(!this.gateOpen()) throw Object.assign(new Error('AI gate closed'),{fatal:true,gated:true});
     if(!this.ownKey()){
       if(!this.quotaLeft()){ this.capNotice(); throw Object.assign(new Error('daily cap'),{fatal:true}); }
       this.quotaConsume();
@@ -935,7 +962,7 @@ const LLM={
 };
 function syncEngineUI(){
   const h=$('#modeHintA');
-  if(h) h.textContent='AI 转写已就绪';
+  if(h) h.textContent=LLM.enabled()?'AI 转写已就绪':'本地引擎模式';
 }
 
 /* ---------- 功能A：LLM 转写（同一段材料会话内缓存，不重复烧额度） ---------- */
@@ -2062,6 +2089,7 @@ function computeRisk(text){
 let _aiDeepSeq=0;
 async function aiDeepAssess(val,flaws,onDone){
   const box=$('#aiDeep'); if(!box) return;
+  if(!LLM.enabled()) return;
   const seq=++_aiDeepSeq;
   box.innerHTML='<div class="ai-deep"><h4>AI 深度评审 · 批阅中…</h4><p class="hint">正在请一位毒舌评审通读你的材料，约十秒。</p></div>';
   try{
@@ -2428,6 +2456,10 @@ document.addEventListener('click',e=>{
 
 /* 顶部导航 平滑降级：锚点跳转后失焦样式可选，无需 JS */
 syncEngineUI();
+refreshFlag();                                   // 拉一次远程总开关
+setInterval(refreshFlag,FLAG_INTERVAL);          // 每 5 分钟复查，止血无需等用户刷新
+window.addEventListener('online',syncEngineUI);  // 断网恢复后文案自动回正
+window.addEventListener('offline',syncEngineUI);
 </script>
 </body>
 </html>
